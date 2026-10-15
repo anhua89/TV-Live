@@ -1,0 +1,16 @@
+.gradle/
+**/build/
+local.properties
+.idea/
+*.iml
+*.jks
+*.keystore
+*.p12
+signing-private/
+*.b64
+TV_KEYSTORE_BASE64.txt
+AnhuaTV-signing-v1/
+*.apk
+release-output/
+**/__pycache__/
+!gradle/wrapper/gradle-wrapper.jar

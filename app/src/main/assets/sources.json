@@ -1,0 +1,8 @@
+[
+  {"id":"best-fan","name":"best-fan（本地实测可用）","url":"https://raw.githubusercontent.com/best-fan/iptv-sources/master/cn_all.m3u8","enabled":true,"priority":0},
+  {"id":"cntv-v6","name":"CNTV-V6（待测）","url":"https://peterhchina.github.io/iptv/CNTV-V6.m3u","enabled":false,"priority":10},
+  {"id":"fanmingming","name":"fanmingming IPv6（待测）","url":"https://live.fanmingming.cn/tv/m3u/ipv6.m3u","enabled":false,"priority":20},
+  {"id":"suxuang","name":"suxuang 移动 IPTV（待测）","url":"https://raw.githubusercontent.com/suxuang/myIPTV/main/移动IPTV.m3u","enabled":false,"priority":30},
+  {"id":"iptv-org","name":"IPTV-org 中国（待测）","url":"https://iptv-org.github.io/iptv/countries/cn.m3u","enabled":false,"priority":40},
+  {"id":"cdtv-candidate","name":"成都 CDTV-1 IPv6（未验证）","url":"asset://cdtv_candidate.m3u","enabled":false,"priority":50}
+]

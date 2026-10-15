@@ -1,0 +1,69 @@
+plugins { id 'com.android.application' }
+
+def appVersion = new Properties()
+rootProject.file('version.properties').withInputStream { appVersion.load(it) }
+def repository = providers.environmentVariable('GITHUB_REPOSITORY').getOrElse('')
+def updateRepository = providers.gradleProperty('updateRepository').getOrElse(repository)
+if (updateRepository && !(updateRepository ==~ /[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*/)) {
+    throw new GradleException('updateRepository 必须为 用户名/仓库名')
+}
+def signingPath = providers.environmentVariable('TV_KEYSTORE_PATH').getOrElse('')
+def signingPassword = providers.environmentVariable('TV_STORE_PASSWORD').getOrElse('')
+def signingAlias = providers.environmentVariable('TV_KEY_ALIAS').getOrElse('')
+def signingKeyPassword = providers.environmentVariable('TV_KEY_PASSWORD').getOrElse('')
+def hasSigning = signingPath && signingPassword && signingAlias && signingKeyPassword
+
+android {
+    namespace 'cn.anhuatv.live'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'cn.anhuatv.live.v1'
+        minSdk 21
+        targetSdk 35
+        versionCode Integer.parseInt(appVersion['versionCode'])
+        versionName appVersion['versionName']
+        buildConfigField 'String', 'UPDATE_REPOSITORY', '"' + updateRepository + '"'
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        release {
+            if (hasSigning) {
+                storeFile file(signingPath)
+                storePassword signingPassword
+                keyAlias signingAlias
+                keyPassword signingKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (hasSigning) signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+        debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    lint {
+        disable 'ObsoleteSdkInt'
+        abortOnError true
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name == 'packageRelease' || it.name == 'assembleRelease' } && !hasSigning) {
+        throw new GradleException('正式构建需要四项签名配置；请按操作指南设置 GitHub Secrets。')
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.media3:media3-exoplayer:1.7.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.7.1'
+    implementation 'androidx.media3:media3-exoplayer-dash:1.7.1'
+    implementation 'androidx.media3:media3-exoplayer-rtsp:1.7.1'
+    implementation 'androidx.media3:media3-ui:1.7.1'
+    testImplementation 'junit:junit:4.13.2'
+}

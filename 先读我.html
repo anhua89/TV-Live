@@ -1,0 +1,493 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>安华电视 1.0 · 从零开始操作指南</title><style>
+:root{--ink:#142b3a;--muted:#607785;--mint:#167c70;--line:#dbe7eb;--soft:#f3f8f9}
+*{box-sizing:border-box}body{margin:0;background:#f5f8fa;color:var(--ink);font:16px/1.85 -apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC",sans-serif}
+header{background:#113344;color:white;padding:50px 6vw 44px}header .eyebrow{color:#84d9c9;font-size:13px;letter-spacing:.16em;font-weight:700}header h1{font-size:38px;line-height:1.35;margin:10px 0}header p{color:#c6dce4;margin:12px 0 0;max-width:880px}
+.wrap{display:grid;grid-template-columns:235px minmax(0,920px);gap:32px;max-width:1250px;margin:34px auto;padding:0 24px 80px}nav{position:sticky;top:22px;align-self:start;font-size:13px;line-height:1.6}nav strong{display:block;margin-bottom:10px}nav ol{list-style:none;padding:0}nav a{display:block;padding:5px 8px;border-left:2px solid var(--line);text-decoration:none;color:var(--muted)}nav a:hover{color:var(--mint);border-color:var(--mint)}article{background:white;border:1px solid var(--line);border-radius:14px;padding:24px 38px 44px;min-width:0;box-shadow:0 8px 30px #12334406}
+h2{scroll-margin-top:22px;margin:38px 0 16px;font-size:24px;line-height:1.5;border-top:1px solid var(--line);padding-top:24px}h2:first-of-type{margin-top:8px;border:0;padding-top:0}p{margin:14px 0}a{color:#176e9c;overflow-wrap:anywhere}strong{font-weight:700}li{margin:9px 0}table{display:block;overflow:auto;border-collapse:collapse;margin:18px 0;width:100%;font-size:14px}th,td{border:1px solid var(--line);padding:11px 14px;vertical-align:top;min-width:120px;overflow-wrap:anywhere}th{background:#eaf4f3;text-align:left}td{background:#fff}tr:nth-child(even) td{background:#fafcfd}code{font:13px/1.7 Consolas,"SFMono-Regular",monospace;background:#edf4f6;border-radius:4px;padding:2px 4px;overflow-wrap:anywhere}pre{position:relative;background:#122f40;color:#e9f7fb;border-radius:9px;padding:18px 20px;overflow:auto;line-height:1.7}pre code{background:transparent;color:inherit;padding:0;overflow-wrap:normal}.intro{border-left:4px solid #32ae95;background:#eef8f5;padding:16px 20px;margin:0 0 20px;border-radius:0 7px 7px 0}.intro p{margin:0}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.tag{background:#ffffff16;border:1px solid #ffffff26;padding:3px 10px;border-radius:999px;font-size:12px}.foot{font-size:13px;color:var(--muted);margin-top:40px}.copy{position:absolute;top:7px;right:8px;border:1px solid #65828f;border-radius:4px;background:#234a5c;color:#e9f7fb;font:12px sans-serif;padding:4px 8px;cursor:pointer}
+@media(max-width:950px){.wrap{grid-template-columns:1fr;padding:0 15px}.wrap nav{position:static}nav ol{columns:2}article{padding:22px}header h1{font-size:29px}}@media print{body{background:#fff;font-size:12pt}header{padding:0;color:#123;background:#fff}header p{color:#456}nav,.tags,.copy{display:none}.wrap{display:block;margin:0;padding:0}article{border:0;padding:0;box-shadow:none}pre{white-space:pre-wrap;color:#123;background:#eef3f5}h2{break-after:avoid}tr,pre{break-inside:avoid}}
+</style></head><body><header><div class="eyebrow">ANHUA TV / VERSION 1.0</div><h1>完整代码已备齐，按顺序完成首次构建。</h1><p>从解压工程、新建仓库、生成新签名，到 GitHub 构建、TCL Q10M 安装和后续应用内更新。这份指南可离线阅读。</p><div class="tags"><span class="tag">全新独立工程</span><span class="tag">GitHub Desktop 上传</span><span class="tag">新签名只生成一次</span><span class="tag">本交付包无 APK</span></div></header><div class="wrap"><nav><strong>操作目录</strong><ol><li><a href="#1-先明确三个东西">1. 先明确三个东西</a></li><li><a href="#2-准备账号和两个工具">2. 准备账号和两个工具</a></li><li><a href="#3-解压并识别项目路径">3. 解压并识别项目路径</a></li><li><a href="#4-用-github-desktop-创建并上传新仓库">4. 用 GitHub Desktop 创建并上传新仓库</a></li><li><a href="#5-在电脑上生成一次新的签名">5. 在电脑上生成一次新的签名</a></li><li><a href="#6-设置四项-repository-secrets">6. 设置四项 Repository Secrets</a></li><li><a href="#7-首次构建-10">7. 首次构建 1.0</a></li><li><a href="#8-在-tcl-q10m-首次安装">8. 在 TCL Q10M 首次安装</a></li><li><a href="#9-遥控器怎么用">9. 遥控器怎么用</a></li><li><a href="#10-订阅与换源">10. 订阅与换源</a></li><li><a href="#11-两类测速有什么差别">11. 两类测速有什么差别</a></li><li><a href="#12-怎样发布-11-并在-app-内升级">12. 怎样发布 1.1 并在 App 内升级</a></li><li><a href="#13-常见问题">13. 常见问题</a></li><li><a href="#14-首次电视验收">14. 首次电视验收</a></li></ol></nav><article><div class="intro"><p><strong>当前方案：</strong>优先完成原生直播、遥控器、多源与测速、应用内更新。best-fan 默认开启。成都台保留未验证候选，回看尚未提供播放功能。</p></div>
+
+<p>你现在拿到的是一个完整的新工程。本次所有设置从零开始；不需要查找旧 GitHub 账号或旧签名。步骤按 Windows 电脑编写。</p>
+
+<h2 id="1-先明确三个东西">1. 先明确三个东西</h2>
+
+<table>
+<thead>
+<tr>
+  <th>名称</th>
+  <th>是什么</th>
+  <th>这次的做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>GitHub 账号</td>
+  <td>上传代码、运行构建所用的账号</td>
+  <td>使用一个你现在能登录并长期保管的账号；忘记旧账号不影响这个新工程</td>
+</tr>
+<tr>
+  <td>项目文件夹</td>
+  <td>同时能看到 <code>app</code>、<code>tools</code>、<code>gradlew.bat</code>、<code>version.properties</code> 的目录</td>
+  <td>解压交付包得到，不要再去找旧 TV 项目</td>
+</tr>
+<tr>
+  <td>签名密钥</td>
+  <td>证明后续 APK 和第一次安装属于同一个作者</td>
+  <td>在你电脑上新建一次，以后每次更新都用这一份</td>
+</tr>
+</tbody>
+</table>
+
+<p>应用名字是 <strong>安华电视</strong>，版本 <strong>1.0</strong>，应用标识 <strong>cn.anhuatv.live.v1</strong>。新签名通常不能覆盖旧签名的应用；本工程按一个新的独立应用安装。即使电视上已有旧版，也不要把它当作这次的覆盖更新目标。</p>
+
+<h2 id="2-准备账号和两个工具">2. 准备账号和两个工具</h2>
+
+<ol>
+<li>打开 <a href="https://github.com/">GitHub</a>，登录你这次准备使用的账号；需要新账号时先注册并完成邮箱验证。</li>
+<li>在密码管理器记录用户名、绑定邮箱和登录方式，保存账号恢复资料。</li>
+<li>安装 <a href="https://desktop.github.com/download/">GitHub Desktop</a>，打开后用同一个账号登录。</li>
+<li>安装 <a href="https://adoptium.net/temurin/releases/?version=17&os=windows&arch=x64&package=jdk">Temurin JDK 17</a>。选 <strong>Windows / x64 / JDK / 17 / MSI</strong>。安装选项若提供 <code>Set JAVA_HOME</code> 和添加到 <code>PATH</code>，一并启用。安装后重新打开终端。</li>
+</ol>
+
+<p>电脑不必安装 Android Studio。JDK 在这里主要用于生成新签名，Android 编译在 GitHub 上进行。</p>
+
+<h2 id="3-解压并识别项目路径">3. 解压并识别项目路径</h2>
+
+<p>先解压，<strong>不要在压缩包预览窗口里直接运行脚本</strong>。打开解压后的 <code>anhua-tv-1.0</code> 文件夹，你应能看到：</p>
+
+<table>
+<thead>
+<tr>
+  <th>文件 / 文件夹</th>
+  <th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>.github/workflows</code></td>
+  <td>GitHub 自动构建与发布配置，上传时必须保留</td>
+</tr>
+<tr>
+  <td><code>app</code></td>
+  <td>Android 应用源码</td>
+</tr>
+<tr>
+  <td><code>gradle</code>、<code>gradlew</code>、<code>gradlew.bat</code></td>
+  <td>Gradle 构建入口</td>
+</tr>
+<tr>
+  <td><code>tools</code></td>
+  <td>新签名及发布脚本</td>
+</tr>
+<tr>
+  <td><code>docs</code>、<code>先读我.html</code></td>
+  <td>操作与技术说明</td>
+</tr>
+<tr>
+  <td><code>version.properties</code></td>
+  <td>当前版本号</td>
+</tr>
+</tbody>
+</table>
+
+<p>**这一级文件夹就是项目路径。**在资源管理器地址栏点击空白处，整行地址就是路径；不需要从系统中搜索旧项目。</p>
+
+<p>如果在这个文件夹的地址栏输入 <code>powershell</code> 并按回车，就会打开当前目录的 PowerShell。运行：</p>
+
+<pre><code>Get-Location
+Test-Path .\tools\New-SigningKey.ps1
+</code></pre>
+
+<p>第二条应该返回 <code>True</code>。若是 <code>False</code>，说明当前层级不对；退回资源管理器，进入能直接看到 <code>tools</code> 和 <code>app</code> 的那一级。</p>
+
+<h2 id="4-用-github-desktop-创建并上传新仓库">4. 用 GitHub Desktop 创建并上传新仓库</h2>
+
+<p>建议仓库名称用 <strong>TV-Live</strong>，与旧项目区分。</p>
+
+<ol>
+<li>GitHub Desktop → <code>File</code> → <code>New repository</code>。</li>
+<li><code>Name</code> 填 <code>TV-Live</code>；<code>Local path</code> 选你容易找的位置，例如 <code>C:\Projects</code>。此时新仓库路径为 <code>C:\Projects\TV-Live</code>。</li>
+<li>创建仓库。若 Desktop 让你填写提交者姓名和邮箱，按你新账号填写。</li>
+<li>在 Desktop 中点 <code>Repository</code> → <code>Show in Explorer</code> 打开新仓库目录。</li>
+<li>把解压工程<strong>里面的全部文件与文件夹</strong>复制到新仓库目录。不是再套一层 <code>anhua-tv-1.0</code>；进入新仓库根目录应能直接看到 <code>app</code>、<code>tools</code>、<code>.github</code>、<code>gradlew.bat</code>。</li>
+<li>如提示同名 README 等文件，保留本交付工程的文件。不要复制生成签名后的私人备份目录。</li>
+<li>回到 Desktop，在左下 <code>Summary</code> 填 <code>Initial AnhuaTV 1.0</code>，点击 <code>Commit to main</code>（你当前默认分支若名称不同，以实际显示为准）。</li>
+<li>点击 <code>Publish repository</code>。<strong>取消勾选 <code>Keep this code private</code>，使用 Public 公开仓库</strong>，然后发布。</li>
+<li>点 <code>View on GitHub</code>。仓库首页应直接显示 <code>app</code>、<code>tools</code>、<code>.github</code>、<code>version.properties</code>。进入 <code>.github/workflows</code> 应能看到两份 <code>.yml</code> 文件。</li>
+</ol>
+
+<p>这个工程的电视端更新通过公开 Releases 下载。私人仓库需要额外认证方案，本工程不会把 GitHub 密码或令牌放进电视 App，因此本教程采用公开仓库。<strong>代码可以公开，签名密钥和密码必须只放 Repository Secrets / 你自己的备份中。</strong></p>
+
+<p>不需要建立 Personal Access Token，也不需要找旧教程里的 <code>Repository permissions → Contents</code>。工作流中的 <code>permissions: contents: write</code> 会为本次运行申请仓库自带 <code>GITHUB_TOKEN</code> 的发布权限。</p>
+
+<h2 id="5-在电脑上生成一次新的签名">5. 在电脑上生成一次新的签名</h2>
+
+<p>在<strong>你准备长期使用的新仓库根目录</strong>打开 PowerShell，先检查位置：</p>
+
+<pre><code>Get-Location
+Test-Path .\tools\New-SigningKey.ps1
+</code></pre>
+
+<p>确认 <code>True</code> 后运行：</p>
+
+<pre><code>powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\New-SigningKey.ps1
+</code></pre>
+
+<ol>
+<li>脚本会让你输入一遍新签名密码，再输入第二遍确认。</li>
+<li>密码至少 8 位，使用英文字母、数字和英文符号，不含空格。输入时不显示字符是正常现象。</li>
+<li>这是<strong>新建的 App 签名密码，不是 GitHub 登录密码</strong>。记录在密码管理器中。</li>
+<li>默认输出目录是 <code>C:\Users\你的Windows用户名\AnhuaTV-signing-v1</code>。PowerShell 会打印实际路径。它在工程目录之外。</li>
+<li>里面会生成 <code>anhua-tv-v1.p12</code>、<code>TV_KEYSTORE_BASE64.txt</code>、<code>TV_KEY_ALIAS.txt</code>、<code>BACKUP-README.txt</code>。密码不会写进文件。</li>
+</ol>
+
+<p>脚本发现输出目录已存在时会停止，防止误覆盖已生成的密钥。如果已经成功生成过，不要重新创建，直接使用这份备份继续下一步。若刚才确实失败且只有不完整文件，先将失败目录改名，再重新执行；保留可能已有的有效密钥。</p>
+
+<p>这次为了减少混淆，采用 PKCS12，<strong>密钥库密码与私钥密码使用同一个密码</strong>。虽然 GitHub 中仍有两项名字，但填入相同值即可。</p>
+
+<p>如提示找不到 <code>keytool</code>：先确认已安装 <strong>JDK</strong>；重新打开 PowerShell。也可以显式提供实际路径，例如：</p>
+
+<pre><code>powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\New-SigningKey.ps1 -KeytoolPath 'C:\Program Files\Eclipse Adoptium\你的JDK目录\bin\keytool.exe'
+</code></pre>
+
+<p>示例中的“你的JDK目录”必须替换成电脑上真实的目录，不能原样照抄。</p>
+
+<h2 id="6-设置四项-repository-secrets">6. 设置四项 Repository Secrets</h2>
+
+<p>在新仓库网页中进入：</p>
+
+<p><strong>Settings → Secrets and variables → Actions → Secrets → New repository secret</strong>。</p>
+
+<p>依次添加四项，名称必须完全一致，不要把名称写进 Secret 内容里：</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name（名称）</th>
+  <th>Secret（内容）</th>
+  <th>从哪里获得</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>TV_KEYSTORE_BASE64</code></td>
+  <td><code>TV_KEYSTORE_BASE64.txt</code> 的完整一行内容</td>
+  <td>新签名输出目录中的文本文件，不能填文件路径</td>
+</tr>
+<tr>
+  <td><code>TV_STORE_PASSWORD</code></td>
+  <td>刚才新建的签名密码</td>
+  <td>你在脚本中输入的密码</td>
+</tr>
+<tr>
+  <td><code>TV_KEY_ALIAS</code></td>
+  <td><code>anhua-tv-v1</code></td>
+  <td>也可复制 <code>TV_KEY_ALIAS.txt</code> 内容</td>
+</tr>
+<tr>
+  <td><code>TV_KEY_PASSWORD</code></td>
+  <td><strong>与 TV<em>STORE</em>PASSWORD 完全相同</strong></td>
+  <td>本工程使用统一的签名密码</td>
+</tr>
+</tbody>
+</table>
+
+<p>复制 Base64 内容时可在 PowerShell 使用：</p>
+
+<pre><code>Get-Content -Raw "$env:USERPROFILE\AnhuaTV-signing-v1\TV_KEYSTORE_BASE64.txt" | Set-Clipboard
+</code></pre>
+
+<p>然后到 <code>TV_KEYSTORE_BASE64</code> 的 Secret 输入框粘贴。这条命令不会把密钥内容打印到屏幕上。</p>
+
+<p>添加后页面只显示四个名称，看不到已保存内容是正常的；需要更正时使用对应项的编辑按钮。<strong>不要把 <code>.p12</code>、Base64 文本或密码文件作为代码上传到仓库。</strong></p>
+
+<h2 id="7-首次构建-10">7. 首次构建 1.0</h2>
+
+<ol>
+<li>进入仓库网页的 <strong>Actions</strong>。</li>
+<li>可能先看到一个 <code>Code checks</code> 自动运行。这是代码检查，不生成可安装 APK，也不要求签名。</li>
+<li>左侧选择 <strong>Build signed TV APK</strong>。</li>
+<li>点击右侧 <strong>Run workflow</strong>，选择已上传完整工程的默认分支。</li>
+<li>保持 <code>Publish to Releases and enable in-app updates</code> 为勾选 / true。</li>
+<li>点击绿色 <code>Run workflow</code> 启动。</li>
+<li>等待这次运行变成绿色。首次下载依赖可能需要几分钟。</li>
+<li>回到仓库 <strong>Code</strong> 页，进入 <strong>Releases</strong>，打开 <strong>安华电视 1.0 / v1.0</strong>。</li>
+<li>在 Assets 下载 <strong>AnhuaTV-1.0.apk</strong>。不要下载 GitHub 自动生成的 <code>Source code (zip)</code> 当作安装包。</li>
+</ol>
+
+<p>同一 Release 中还应有一个 <code>update.json</code>。这是电视 App 检查更新用的描述文件，由工作流自动生成，不需要你手工编辑。</p>
+
+<p>也可以在 Actions 那次运行底部的 <strong>Artifacts</strong> 下载 <code>AnhuaTV-1.0</code>，解压后获得 APK 和描述文件。Artifacts 需要网页登录；电视内更新只使用公开 Releases。</p>
+
+<p>如果 <code>Run workflow</code> 没有出现：检查 <code>.github/workflows/release.yml</code> 是否在仓库根目录下的正确位置，并且已提交到默认分支；如果压缩包被直接作为一个 <code>.zip</code> 文件上传，GitHub 不会自动解压为工程。</p>
+
+<h2 id="8-在-tcl-q10m-首次安装">8. 在 TCL Q10M 首次安装</h2>
+
+<ol>
+<li>将 <code>AnhuaTV-1.0.apk</code> 复制到 U 盘，插入 TCL Q10M，使用电视的文件管理器找到文件。</li>
+<li>若电视询问未知来源安装权限，为你当前使用的文件管理器允许安装。</li>
+<li>进入系统安装界面，确认安装并打开 <strong>安华电视</strong>。</li>
+<li>首次启动会下载默认启用的 best-fan 订阅。若拿不到列表，右键进入订阅管理检查地址与网络。</li>
+<li>旧版同名图标可能仍在；首次验收请从刚安装的应用打开，或在工具 → 使用说明中确认版本 <code>1.0</code> 与新仓库名称。</li>
+</ol>
+
+<p>TCL 系统版本不同，文件管理和安装权限入口可能不同。若系统直接拦截安装，应以电视实际提示定位系统设置；本工程不能代替系统安装授权。</p>
+
+<h2 id="9-遥控器怎么用">9. 遥控器怎么用</h2>
+
+<table>
+<thead>
+<tr>
+  <th>场景</th>
+  <th>按键</th>
+  <th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>全屏播放</td>
+  <td>上 / 下</td>
+  <td>前 / 后一个频道</td>
+</tr>
+<tr>
+  <td>全屏播放</td>
+  <td>确定或左键</td>
+  <td>打开频道列表</td>
+</tr>
+<tr>
+  <td>全屏播放</td>
+  <td>按住上 / 下</td>
+  <td>进入列表后连续移动选中项</td>
+</tr>
+<tr>
+  <td>频道列表</td>
+  <td>按住上 / 下</td>
+  <td>连续滚动；松开停住；按确定后才播放选中频道</td>
+</tr>
+<tr>
+  <td>频道列表</td>
+  <td>左 / 右</td>
+  <td>全部、收藏、央视、卫视、成都、其他之间切换</td>
+</tr>
+<tr>
+  <td>全屏或列表</td>
+  <td>长按确定约 0.6 秒后松开</td>
+  <td>收藏 / 取消收藏当前或选中频道</td>
+</tr>
+<tr>
+  <td>全屏播放</td>
+  <td>右键或菜单键</td>
+  <td>打开线路、测速、订阅、更新等工具</td>
+</tr>
+<tr>
+  <td>全屏或列表</td>
+  <td>数字键</td>
+  <td>输入列表左侧编号，约 1.1 秒后跳台；编号随订阅更新可能改变</td>
+</tr>
+<tr>
+  <td>列表或系统菜单</td>
+  <td>返回</td>
+  <td>关闭当前层</td>
+</tr>
+<tr>
+  <td>全屏播放</td>
+  <td>2 秒内连续按两次返回</td>
+  <td>退出应用</td>
+</tr>
+</tbody>
+</table>
+
+<p>音量键由电视系统处理。程序退出或切到后台时停止播放，返回应用后重新连接，不会在后台继续直播。</p>
+
+<h2 id="10-订阅与换源">10. 订阅与换源</h2>
+
+<p>内置五个约定的网络订阅，默认开关如下：</p>
+
+<table>
+<thead>
+<tr>
+  <th>订阅</th>
+  <th>初始状态</th>
+  <th>地址</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>best-fan</td>
+  <td>开</td>
+  <td>https://raw.githubusercontent.com/best-fan/iptv-sources/master/cn_all.m3u8</td>
+</tr>
+<tr>
+  <td>CNTV-V6</td>
+  <td>关，候选</td>
+  <td>https://peterhchina.github.io/iptv/CNTV-V6.m3u</td>
+</tr>
+<tr>
+  <td>fanmingming IPv6</td>
+  <td>关，候选</td>
+  <td>https://live.fanmingming.cn/tv/m3u/ipv6.m3u</td>
+</tr>
+<tr>
+  <td>suxuang 移动 IPTV</td>
+  <td>关，候选</td>
+  <td>https://raw.githubusercontent.com/suxuang/myIPTV/main/移动IPTV.m3u</td>
+</tr>
+<tr>
+  <td>IPTV-org 中国</td>
+  <td>关，候选</td>
+  <td>https://iptv-org.github.io/iptv/countries/cn.m3u</td>
+</tr>
+</tbody>
+</table>
+
+<p>另有一个内置 <strong>成都 CDTV-1 IPv6（未验证）</strong>，也是关闭状态。它只是此前讨论的候选地址，不是已验证的看度官方接入。可以启用后在你家网络实测；不能播放就继续关闭。</p>
+
+<p>右键 → <strong>订阅管理</strong> → 选订阅，可以启停、改名称/地址/优先级或删除。改动会触发刷新。最好先只开 best-fan，再逐个测试其他候选，避免把本地不可达的线路带回播放队列。</p>
+
+<p>要在发布前改默认地址：编辑 <code>app/src/main/assets/sources.json</code>。其中 <code>enabled</code> 控制开关，<code>priority</code> 越小越优先。已经安装的应用会优先使用它自己保存过的配置；换默认配置后如需让老用户使用，仍需在 App 中修改相应订阅。</p>
+
+<p>右键 → <strong>当前频道线路 / 手动换源</strong> 可查看同频道全部线路及最近结果，选一条立即播放。如果失败，程序会继续尝试剩余线路；每次连接周期各线路最多尝试一次，全部失败后等待你重试或换台，避免无限循环。</p>
+
+<p>原生切台速度取决于流服务器、关键帧间隔、网络和电视解码能力，不能保证固定秒数。播放器重用同一个 ExoPlayer，并使用较小起播缓冲，但不会用“URL 能访问”代替出画验收。</p>
+
+<h2 id="11-两类测速有什么差别">11. 两类测速有什么差别</h2>
+
+<table>
+<thead>
+<tr>
+  <th>工具</th>
+  <th>实际做什么</th>
+  <th>能得出什么结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>本地网络测速</td>
+  <td>本机 GET 直播地址；HLS 会跟进变体和媒体分片，抽样读取最多 64 KB</td>
+  <td>本机此时能取到一段数据及其耗时，<strong>不代表已经解码出画</strong></td>
+</tr>
+<tr>
+  <td>逐路出画实测</td>
+  <td>用电视当前的原生播放器逐条打开线路，等待真实首帧事件，单条最多约 12 秒</td>
+  <td>该电视此时能够渲染视频首帧；不是长时间稳定性或音画同步的保证</td>
+</tr>
+</tbody>
+</table>
+
+<p>逐路实测时临时静音，结束或停止后恢复原频道。测速会消耗少量网络流量。结果保存在本机，排序只参考最近 24 小时的结果；线路“最近失败”后也能手动重新验证。</p>
+
+<h2 id="12-怎样发布-11-并在-app-内升级">12. 怎样发布 1.1 并在 App 内升级</h2>
+
+<p>以后只要保留<strong>同一个应用标识、同一份签名和同一个新仓库</strong>，就可以持续更新。</p>
+
+<ol>
+<li>修改代码后，打开仓库根目录的 <code>version.properties</code>。</li>
+<li>从首次的：</li>
+</ol>
+
+<pre><code>versionCode=1
+versionName=1.0
+</code></pre>
+
+<p>改成：</p>
+
+<pre><code>versionCode=2
+versionName=1.1
+</code></pre>
+
+<ol start="3">
+<li>更新 <code>release-notes.md</code>，写这次变化。</li>
+<li>使用 GitHub Desktop 提交更改，然后 <code>Push origin</code>。</li>
+<li>在 Actions 手动运行 <strong>Build signed TV APK</strong>，保持发布选项开启。</li>
+<li>工作流会先检查该标签是否已存在、<code>versionCode</code> 是否高于当前公开版本，通过后构建并完整发布 <code>v1.1</code>。</li>
+<li>在电视打开安华电视 → 右键 → <strong>检查应用更新</strong> → 下载 → 确认安装。</li>
+<li>第一次从 App 内安装时，系统可能要求允许“安华电视”安装未知来源应用；允许后返回，会继续打开安装界面。</li>
+</ol>
+
+<p>这属于“在 App 内检查与下载，交给系统确认安装”，不是静默后台安装。电视无需每次再用 U 盘，但电视必须能访问 GitHub Releases。</p>
+
+<p>签名丢失时无法用另一把随机密钥覆盖同一应用。请把 <strong><code>.p12</code> 文件、Base64 副本、别名、密码、新仓库地址</strong> 做一次可靠备份；不要在每次发版时重新运行新签名脚本。</p>
+
+<p>若某次构建通过但发布失败，Actions 的 Artifacts 里仍可下载成品；如果留下了 Draft Release，可以到 Releases 检查。重试前若使用相同版本，先核对该草稿的内容。这个工作流会拒绝覆盖已存在版本；最直观的修复是保留原版并递增 <code>versionCode</code>、<code>versionName</code> 后重新发布。</p>
+
+<h2 id="13-常见问题">13. 常见问题</h2>
+
+<table>
+<thead>
+<tr>
+  <th>现象</th>
+  <th>先检查什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>“项目路径在哪里”</td>
+  <td>GitHub Desktop → Repository → Show in Explorer；能同时看到 <code>app</code>、<code>tools</code> 和 <code>gradlew.bat</code> 的这一层</td>
+</tr>
+<tr>
+  <td>Actions 只有 Code checks</td>
+  <td><code>.github/workflows/release.yml</code> 是否已提交到默认分支，文件是否放错层级</td>
+</tr>
+<tr>
+  <td><code>Missing repository secret</code></td>
+  <td>四项名称是否完全正确，是否建在本仓库的 Actions Secrets 下</td>
+</tr>
+<tr>
+  <td><code>keystore password was incorrect</code></td>
+  <td>STORE<em>PASSWORD 与脚本生成时的密码是否一致；KEY</em>PASSWORD 本工程应填同一个值</td>
+</tr>
+<tr>
+  <td><code>alias does not exist</code></td>
+  <td><code>TV_KEY_ALIAS</code> 应为 <code>anhua-tv-v1</code></td>
+</tr>
+<tr>
+  <td>发布出现 403 / Resource not accessible</td>
+  <td>确认是你拥有的新仓库。Settings → Actions → General → Workflow permissions 若允许，选择 Read and write permissions 并保存；工作流本身已写 <code>contents: write</code>。组织限制需由仓库/组织管理员处理</td>
+</tr>
+<tr>
+  <td><code>versionCode</code> 或标签冲突</td>
+  <td>同时递增 <code>versionCode</code> 和 <code>versionName</code>，不要覆盖旧 Release</td>
+</tr>
+<tr>
+  <td>App 检查更新 404</td>
+  <td>是否勾选发布、是否存在正式 Release，以及 <code>update.json</code> 是否在 Assets 中；Draft/Artifacts 不供电视读取</td>
+</tr>
+<tr>
+  <td>App 报签名不符</td>
+  <td>该次构建使用了不同密钥；恢复最初那份密钥对应的 Secrets，不要改 App 的核验代码</td>
+</tr>
+<tr>
+  <td>能拉列表但全黑屏</td>
+  <td>列表可下载不等于节目流可达；在电视上做逐路出画测试，核对网络、IPv6 和设备支持</td>
+</tr>
+<tr>
+  <td>更新下载不上或缓慢</td>
+  <td>电视到 GitHub 的网络状况；可以从同一 Release 手动取得相同签名 APK 安装</td>
+</tr>
+<tr>
+  <td>本地 M3U 导入打不开文件选择器</td>
+  <td>部分电视无系统文档选择器；可以用网络订阅，或打包前修改内置配置</td>
+</tr>
+<tr>
+  <td>旧版收藏没有了</td>
+  <td>这是独立新应用，未迁移旧数据；在 1.0 内重新收藏</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="14-首次电视验收">14. 首次电视验收</h2>
+
+<p>建议首次安装后按以下次序确认：</p>
+
+<ol>
+<li>工具 → 使用说明显示 <strong>1.0</strong> 与你的新仓库。</li>
+<li>best-fan 载入后，至少各播一个央视和卫视频道，持续观察几分钟。</li>
+<li>上下切台，确定开列表，长按上下移动后按确定，验证没有网页闪现。</li>
+<li>长按确定收藏；重启 App 后检查收藏及上次成功播放频道。</li>
+<li>在有多条线路的频道分别做网络抽样与逐路实播，手动选择一条线路。</li>
+<li>临时启用一个其他订阅，确认刷新；停用后确认对应独有频道退出列表。</li>
+<li>发布一个更高的测试版本，完成一次“App 检查 → 下载 → 系统确认安装”的完整升级。</li>
+</ol>
+
+<p>成都台和回看不作为本次 B 方案已经可用的验收项。当前交付的编译与测试范围见 <a href="docs/验证记录.md">验证记录</a>。</p>
+<p class="foot">配套文档：<a href="README.md">工程说明</a> · <a href="docs/技术说明.md">技术说明</a> · <a href="docs/验证记录.md">验证记录</a><br>2026-10-15 · 安华电视 1.0</p></article></div><script>document.querySelectorAll('pre').forEach(pre=>{const button=document.createElement('button');button.className='copy';button.textContent='复制';button.addEventListener('click',async()=>{const code=pre.querySelector('code');const value=code?code.innerText:pre.innerText;try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);}else{const field=document.createElement('textarea');field.value=value;field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();document.execCommand('copy');field.remove();}button.textContent='已复制';setTimeout(()=>button.textContent='复制',1500);}catch(e){button.textContent='请选中文字复制';}});pre.appendChild(button);});</script></body></html>

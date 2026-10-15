@@ -1,0 +1,3 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="CDTV1" group-title="成都（未验证）",CDTV-1
+http://[2409:8c02:21c:60::2b]/live.rxip.sc96655.com/live/CDTV-1_4000.m3u8
