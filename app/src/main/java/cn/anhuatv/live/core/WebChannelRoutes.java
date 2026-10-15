@@ -9,8 +9,8 @@ import java.util.List;
 /** Only Chengdu TV uses a web page. It is never passed to the native stream player. */
 public final class WebChannelRoutes {
     public static final String ENTRY_ID = "CHENGDU_WEB";
-    // A shared landing page, not invented per-channel deep links. Select the CDTV channel on it.
-    public static final String DEFAULT_URL = "https://www.cditv.cn/html/cdrtv/#live";
+    // The homepage shown in the user's screenshot contains the television live section.
+    public static final String DEFAULT_URL = "https://cditv.cn/";
     private WebChannelRoutes() {}
 
     public static boolean usesWeb(Channel channel) {
