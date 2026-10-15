@@ -34,6 +34,7 @@ import cn.anhuatv.live.core.PlaylistParser;
 import cn.anhuatv.live.core.RouteOrder;
 import cn.anhuatv.live.core.RouteOrder.Health;
 import cn.anhuatv.live.core.WebChannelRoutes;
+import cn.anhuatv.live.core.ChannelSelection;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,7 +108,7 @@ public final class MainActivity extends Activity {
         FrameLayout.LayoutParams panel = new FrameLayout.LayoutParams(dp(382), -1, Gravity.START);
         drawerTitle = text("全部", 22, 0xFF64DCC5); drawerTitle.setPadding(dp(10), 0, 0, dp(8));
         drawer.addView(drawerTitle);
-        TextView hint = text("← → 切换分组    长按 ↑ ↓ 连续滚动\n确定播放 · 返回关闭 · 长按确定收藏", 12, 0xFFA4B7C9);
+        TextView hint = text("← → 切换分组    ↑ ↓ 首尾循环选择\n长按连续滚动 · 确定播放 · 长按确定收藏", 12, 0xFFA4B7C9);
         hint.setPadding(dp(10), 0, 0, dp(10)); drawer.addView(hint);
         list = new ListView(this); list.setDividerHeight(0); list.setItemsCanFocus(false);
         list.setChoiceMode(ListView.CHOICE_MODE_SINGLE); list.setSelector(focusShape());
@@ -171,7 +172,8 @@ public final class MainActivity extends Activity {
             if (!foreground || webChannelOpen) return;
             webChannelOpen = true; lastWebSelection = c.id; player.suspend();
             try {
-                startActivityForResult(new Intent(this, WebChannelActivity.class).putExtra("channel_name", c.name), WEB_CHANNEL);
+                startActivityForResult(new Intent(this, WebChannelActivity.class)
+                        .putExtra("site_key", WebChannelRoutes.site(c).key).putExtra("channel_name", c.name), WEB_CHANNEL);
             } catch (Exception e) {
                 webChannelOpen = false; player.resume(); show("网页无法打开", "请返回频道列表后重试。" + e.getMessage());
             }
@@ -228,10 +230,10 @@ public final class MainActivity extends Activity {
                 if (down && !visible.isEmpty()) {
                     long now = SystemClock.elapsedRealtime();
                     if (event.getRepeatCount() == 0 || now - lastBrowseAt >= 75) {
-                        lastBrowseAt = now; int selected = Math.max(0, list.getSelectedItemPosition());
+                        lastBrowseAt = now; int selected = list.getSelectedItemPosition();
                         int delta = key == KeyEvent.KEYCODE_DPAD_UP ? -1 : 1;
                         // Holding only changes selection. A single OK key-up commits playback.
-                        list.setSelection(Math.max(0, Math.min(visible.size() - 1, selected + delta)));
+                        list.setSelection(ChannelSelection.next(selected, delta, visible.size()));
                     }
                 }
                 return true;
@@ -450,7 +452,8 @@ public final class MainActivity extends Activity {
     private void about() {
         show(getString(R.string.app_name) + " " + BuildConfig.VERSION_NAME + " · 使用说明",
                 "上下：切台；按住进入频道列表继续滚动\n确定 / 左键：频道列表；列表中左右切换分组\n长按确定：收藏当前或选中频道\n右键 / 菜单：线路、测速、订阅、更新\n数字键：输入列表编号后自动跳台\n返回：关闭列表；连续两次退出\n\n" +
-                "成都台：选择成都频道后打开网页，在网页中选择对应频道；菜单键可修改网页地址。其他频道仍使用原生播放器。\n" +
+                "频道列表：上下首尾循环，长按连续选择，确定才播放。\n" +
+                "网页频道：成都台、咪咕视频、优酷视频；方向键移光标、确定点击，菜单可修改各自网页地址。其他频道仍使用原生播放器。\n" +
                 "回看：本版未提供 EPG 或回看播放；已保留订阅中的 catchup 元数据。网页是否提供回看由网站决定。\n\n" +
                 "更新仓库：" + (BuildConfig.UPDATE_REPOSITORY.isEmpty() ? "未配置" : BuildConfig.UPDATE_REPOSITORY) + "\n\n" + loadSummary);
     }

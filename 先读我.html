@@ -1,126 +1,109 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>简视 TV 1.3 · 看度网页修正</title><style>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>简视 TV 1.4 · 咪咕、优酷与循环选择</title><style>
 :root{--ink:#142b3a;--muted:#607785;--mint:#167c70;--line:#dbe7eb;--soft:#f3f8f9}
 *{box-sizing:border-box}body{margin:0;background:#f5f8fa;color:var(--ink);font:16px/1.85 -apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC",sans-serif}
 header{background:#113344;color:white;padding:50px 6vw 44px}header .eyebrow{color:#84d9c9;font-size:13px;letter-spacing:.16em;font-weight:700}header h1{font-size:38px;line-height:1.35;margin:10px 0}header p{color:#c6dce4;margin:12px 0 0;max-width:880px}
 .wrap{display:grid;grid-template-columns:235px minmax(0,920px);gap:32px;max-width:1250px;margin:34px auto;padding:0 24px 80px}nav{position:sticky;top:22px;align-self:start;font-size:13px;line-height:1.6}nav strong{display:block;margin-bottom:10px}nav ol{list-style:none;padding:0}nav a{display:block;padding:5px 8px;border-left:2px solid var(--line);text-decoration:none;color:var(--muted)}nav a:hover{color:var(--mint);border-color:var(--mint)}article{background:white;border:1px solid var(--line);border-radius:14px;padding:24px 38px 44px;min-width:0;box-shadow:0 8px 30px #12334406}
 h2{scroll-margin-top:22px;margin:38px 0 16px;font-size:24px;line-height:1.5;border-top:1px solid var(--line);padding-top:24px}h2:first-of-type{margin-top:8px;border:0;padding-top:0}p{margin:14px 0}a{color:#176e9c;overflow-wrap:anywhere}strong{font-weight:700}li{margin:9px 0}table{display:block;overflow:auto;border-collapse:collapse;margin:18px 0;width:100%;font-size:14px}th,td{border:1px solid var(--line);padding:11px 14px;vertical-align:top;min-width:120px;overflow-wrap:anywhere}th{background:#eaf4f3;text-align:left}td{background:#fff}tr:nth-child(even) td{background:#fafcfd}code{font:13px/1.7 Consolas,"SFMono-Regular",monospace;background:#edf4f6;border-radius:4px;padding:2px 4px;overflow-wrap:anywhere}pre{position:relative;background:#122f40;color:#e9f7fb;border-radius:9px;padding:18px 20px;overflow:auto;line-height:1.7}pre code{background:transparent;color:inherit;padding:0;overflow-wrap:normal}.intro{border-left:4px solid #32ae95;background:#eef8f5;padding:16px 20px;margin:0 0 20px;border-radius:0 7px 7px 0}.intro p{margin:0}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.tag{background:#ffffff16;border:1px solid #ffffff26;padding:3px 10px;border-radius:999px;font-size:12px}.foot{font-size:13px;color:var(--muted);margin-top:40px}.copy{position:absolute;top:7px;right:8px;border:1px solid #65828f;border-radius:4px;background:#234a5c;color:#e9f7fb;font:12px sans-serif;padding:4px 8px;cursor:pointer}
 @media(max-width:950px){.wrap{grid-template-columns:1fr;padding:0 15px}.wrap nav{position:static}nav ol{columns:2}article{padding:22px}header h1{font-size:29px}}@media print{body{background:#fff;font-size:12pt}header{padding:0;color:#123;background:#fff}header p{color:#456}nav,.tags,.copy{display:none}.wrap{display:block;margin:0;padding:0}article{border:0;padding:0;box-shadow:none}pre{white-space:pre-wrap;color:#123;background:#eef3f5}h2{break-after:avoid}tr,pre{break-inside:avoid}}
-</style></head><body><header><div class="eyebrow">JIANSHI TV / VERSION 1.3</div><h1>简视 TV 1.3 · 看度网页修正</h1><p>修正首页入口、电视网页适配及视频状态提示。继续使用原仓库和签名。</p><div class="tags"><span class="tag">完整源码，无 APK</span><span class="tag">76 项逻辑测试通过</span><span class="tag">电视实播待验证</span></div></header><div class="wrap"><nav><strong>升级与使用</strong><ol><li><a href="#针对三张图的修正">针对三张图的修正</a></li><li><a href="#更新工程并发布">更新工程并发布</a></li><li><a href="#在电视升级和检查">在电视升级和检查</a></li><li><a href="#如果仍然黑屏">如果仍然黑屏</a></li><li><a href="#验证范围">验证范围</a></li></ol></nav><article><h1 id="简视-tv-13修正看度首页网页缩放与黑屏提示">简视 TV 1.3：修正看度首页、网页缩放与黑屏提示</h1>
+</style></head><body><header><div class="eyebrow">JIANSHI TV / VERSION 1.4</div><h1>简视 TV 1.4 · 咪咕、优酷与循环选择</h1><p>新增两个独立网页频道，频道列表上下首尾循环。继续使用现有 TV-Live 仓库与签名。</p><div class="tags"><span class="tag">完整源码，无 APK</span><span class="tag">保留成都配置</span><span class="tag">versionCode 5</span></div></header><div class="wrap"><nav><strong>已有用户升级指南</strong><ul>
+  <li><a href="#这一版的变化">这一版的变化</a></li>
+  <li><a href="#更新工程并发布">更新工程并发布</a></li>
+  <li><a href="#在电视上升级">在电视上升级</a></li>
+  <li><a href="#打开咪咕或优酷">打开咪咕或优酷</a></li>
+  <li><a href="#电视验收">电视验收</a></li>
+  <li><a href="#本次验证范围">本次验证范围</a></li>
+</ul>
+</nav><article><div class="intro"><p>先完整解压，再把项目里面的全部文件复制到当前仓库根目录。沿用现有四项 Secrets，无需重新生成签名。</p></div><p>适用于已经安装本次新工程 1.0～1.3 的电视。当前版本 <strong>1.4 / versionCode 5</strong>，应用标识继续为 <code>cn.anhuatv.live.v1</code>。继续使用你的 <strong>TV-Live</strong> 仓库、现有四项 Secrets 和同一份签名；无需重建仓库或重新生成密钥。</p>
 
-<p>适用于已经安装本次新工程 1.0、1.1 或 1.2 的电视。当前版本 <strong>1.3 / versionCode 4</strong>，应用标识继续为 <code>cn.anhuatv.live.v1</code>。沿用你现有的 <strong>TV-Live</strong> 仓库、四项 Secrets 和同一份签名，不要重新生成密钥。</p>
-
-<h2 id="针对三张图的修正">针对三张图的修正</h2>
+<h2 id="这一版的变化">这一版的变化</h2>
 
 <table>
 <thead>
 <tr>
-  <th>反馈</th>
-  <th>1.3 的处理</th>
+  <th>改动</th>
+  <th>使用方式</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-  <td>看度新闻网入口不对</td>
-  <td>默认改为你截图中的 <code>https://cditv.cn/</code> 首页；不再使用会进入历史新闻的 <code>/html/cdrtv/#live</code>。首页载入后尝试按实际 CDTV 标签定位电视直播区，不编造频道直达地址</td>
+  <td>咪咕视频</td>
+  <td>“全部”列表末尾的 <strong>咪咕视频（网页）</strong>，默认打开 <a href="https://www.miguvideo.com/">咪咕官网</a></td>
 </tr>
 <tr>
-  <td>电视页面和文字过大</td>
-  <td>默认请求桌面网页，保留电视真实的浏览器内核版本；文字缩放设为 100%，关闭文字自动放大，使用 1280 CSS 像素布局并按屏幕宽度适配。菜单仍可缩放、重新适配或切换兼容布局</td>
+  <td>优酷视频</td>
+  <td>“全部”列表末尾的 <strong>优酷视频（网页）</strong>，默认打开 <a href="https://www.youku.com/ku/webhome">优酷官网</a></td>
 </tr>
 <tr>
-  <td>点链接后只有黑屏</td>
-  <td>增加普通新窗口链接与脚本新窗口的当前窗口跳转；仅看度域名启用历史 HTTP 视频兼容；提供尝试播放、全屏与视频状态检测，明确区分无视频、未起播、媒体网络错误、解码/格式错误和不可读取的独立播放器</td>
+  <td>列表首尾循环</td>
+  <td>第一项按上到最后一项；最后一项按下到第一项。长按上下可继续循环，松开停住，按确定才播放</td>
+</tr>
+<tr>
+  <td>网址与布局独立</td>
+  <td>三个网站分别记住自己的网址和桌面/兼容布局；修改咪咕不影响优酷或成都</td>
 </tr>
 </tbody>
 </table>
 
-<p><strong>第三项仍需电视验证。</strong> 截图不能确定黑屏的唯一原因；开发环境访问看度首页仍返回 403，无法复现你电脑上能播放的直播。因此不能承诺已让所有 CDTV 链接出画。新版已修正入口和兼容逻辑，并加入可拍照反馈的网页诊断，避免只显示一块黑屏和“网页已加载”。</p>
+<p>两个新入口也在“其他”分组中，支持长按确定收藏。没有启用直播订阅时，三个网页入口仍会显示。新增入口追加在列表末尾，保留原有频道顺序。</p>
 
-<p>央视、四川卫视及其他非成都频道的原生播放器、订阅内容、线路排序、测速和收藏代码均保持原样。</p>
+<p>你已反馈 1.3 成都网页可用；1.4 沿用其首页、遥控器光标、桌面适配、播放/全屏、新窗口跳转和诊断功能。咪咕、优酷从各自首页选择节目；成都仍会尝试定位电视直播区。</p>
 
 <h2 id="更新工程并发布">更新工程并发布</h2>
 
 <ol>
-<li>下载完整源码 ZIP，解压后进入 <code>jianshi-tv-1.3</code>。这一层直接能看到 <code>app</code>、<code>tools</code>、<code>.github</code>、<code>gradlew.bat</code> 和 <code>version.properties</code>。</li>
-<li>打开 GitHub Desktop，选 <strong>TV-Live</strong>，先点 <strong>Fetch origin</strong>；出现 <strong>Pull origin</strong> 时先拉取。</li>
-<li>点 <strong>Repository → Show in Explorer</strong> 打开当前仓库根目录。</li>
-<li>把 <code>jianshi-tv-1.3</code> <strong>里面的所有文件和文件夹</strong>复制进去，覆盖同名文件。不要再套一层项目文件夹，不要删除仓库自己的 <code>.git</code>。</li>
-<li>Summary 填 <code>Fix Cditv home, desktop layout and web playback handling</code>，点 <strong>Commit to main</strong>，再点 <strong>Push origin</strong>。</li>
-<li>等最新提交的 <strong>Code checks</strong> 通过。现有工作流会额外自动运行网页适配的 JavaScript 逻辑检查，不用新增任何 Secrets。</li>
-<li>GitHub → Actions → <strong>Build signed TV APK → Run workflow</strong>，保持正式发布选项开启。</li>
-<li>成功后 Releases 应有 <strong>v1.3</strong>，附件含 <strong>JianshiTV-1.3.apk</strong>、<strong>update.json</strong> 和频道目录。</li>
+<li>下载 <strong>JianshiTV-1.4-Complete-Source.zip</strong>，先完整解压，再进入 <code>jianshi-tv-1.4</code>。这一层直接能看到 <code>app</code>、<code>tools</code>、<code>.github</code>、<code>gradlew.bat</code> 和 <code>version.properties</code>。</li>
+<li>打开 GitHub Desktop，选择 <strong>TV-Live</strong>，点 <strong>Fetch origin</strong>；出现 <strong>Pull origin</strong> 时先拉取。</li>
+<li>点 <strong>Repository → Show in Explorer</strong>，打开这台电脑实际使用的仓库根目录。换过电脑或盘符也使用这个入口，不需要沿用旧绝对路径。</li>
+<li>把解压后的 <code>jianshi-tv-1.4</code> <strong>里面的全部文件和文件夹</strong>复制到仓库根目录，覆盖同名文件。不要再套一层项目文件夹，不要删除仓库自己的 <code>.git</code>。</li>
+<li>回到 Desktop，Summary 填 <code>Add Migu and Youku web channels and loop channel selection</code>，点 <strong>Commit to main</strong>，再点 <strong>Push origin</strong>。</li>
+<li>等这次提交的 <strong>Code checks</strong> 通过。</li>
+<li>GitHub → <strong>Actions → Build signed TV APK → Run workflow</strong>，保持正式发布选项开启。继续使用现有 Secrets，不重新配置签名。</li>
+<li>成功后 <strong>Releases → v1.4</strong> 应有 <strong>JianshiTV-1.4.apk</strong>、<strong>update.json</strong> 和 <strong>channels.m3u</strong>。</li>
 </ol>
 
-<p>这个源码 ZIP 不是安装包，也不会自行改变电视上的 App。若你的仓库已经发布过 v1.3，需同时递增 versionCode、versionName 再发布，不覆盖既有 Release。</p>
+<p>本包已设置 <code>versionName=1.4</code>、<code>versionCode=5</code>。源码 ZIP 需要经过上述构建与发布，电视才能发现更新。若你的仓库已发布过 v1.4 或 versionCode 已达到 5，先同时递增两个版本值再发布，不能覆盖已发布的同版本。</p>
 
-<h2 id="在电视升级和检查">在电视升级和检查</h2>
+<h2 id="在电视上升级">在电视上升级</h2>
 
-<p>能访问 GitHub Releases：旧 App → 右键 → <strong>检查应用更新</strong> → 下载 → 系统确认安装。</p>
+<p>旧 App → 右键 → <strong>检查应用更新</strong> → 下载 → 系统确认安装。发布完成且电视能访问 GitHub Releases 后才能使用这一方式。</p>
 
-<p>更新连接超时：电脑从同一个 Release 下载 <strong>JianshiTV-1.3.apk</strong>，用 U 盘同签名覆盖安装，不必卸载。这样可保留收藏和配置。</p>
+<p>如果下载超时，在电脑从同一个 Release 下载 <strong>JianshiTV-1.4.apk</strong>，用 U 盘覆盖安装。保持同一应用标识和签名，不卸载原 App，可保留收藏、订阅和成都网页配置。</p>
 
-<p>安装后：</p>
+<h2 id="打开咪咕或优酷">打开咪咕或优酷</h2>
 
 <ol>
-<li>工具 → 使用说明确认 <strong>1.3</strong>。</li>
-<li>先播放一个央视和四川卫视频道，确认仍为原生播放。</li>
-<li>打开成都网页，点顶部 <strong>看度直播</strong>，确认显示首页的电视直播区，而不是 2023 年的新闻文章。旧版保存的已知错误默认地址会自动迁移；个人填过的其他网址仍保留。</li>
-<li>如果没有自动滚到直播区，按 <strong>菜单 → 定位电视直播区</strong>，或用翻页键滚动。</li>
-<li>页面仍显得大时，按 <strong>菜单 → 重新适配屏幕</strong>；也可以用 <strong>缩小网页</strong>。如果网站桌面版不兼容，可试 <strong>切换兼容布局</strong>。</li>
-<li>用光标点击 CDTV 频道和网页播放按钮，也可点顶部 <strong>播放 / 全屏 → 尝试播放</strong>。</li>
-<li>检查画面、声音和几分钟的持续播放；“检测到视频进度推进”仍不等于这些项目都已通过。</li>
+<li>按确定打开频道列表，左右切到 <strong>全部</strong>。</li>
+<li>两个新入口在列表末尾：在第一项按一次 <strong>上</strong>，即可循环到最后的 <strong>优酷视频（网页）</strong>；再按一次上是 <strong>咪咕视频（网页）</strong>。也可切到 <strong>其他</strong> 查找。</li>
+<li>选中后按确定，进入 App 内网页。方向键移动光标，确定点击网页中的节目、赛事或播放按钮。</li>
+<li>顶部 <strong>咪咕首页 / 优酷首页</strong> 返回该网站首页；<strong>播放 / 全屏</strong> 可尝试播放视频或请求网页全屏，也可直接点击网页内部的播放/全屏按钮。</li>
+<li>菜单键打开网页工具，可刷新、返回页面顶部、重新适配、放大/缩小、切换兼容布局、修改本频道网址或查看诊断。</li>
+<li>返回键先退出视频全屏，再回到频道列表。要回到网页上一页，使用 <strong>网页工具 → 网页返回上一页</strong>。</li>
 </ol>
 
-<h2 id="如果仍然黑屏">如果仍然黑屏</h2>
+<p>完整网页遥控操作：方向键移光标，确定点击，翻页键滚动页面；菜单键开工具。网页内按上/下仍用于移动光标，首尾循环只作用于频道选择列表。</p>
 
-<p>先等待约 12 秒，查看顶部的提示，再按 <strong>菜单 → 网页诊断</strong>。可以拍下这一页反馈，无需连接电脑调试电视。</p>
+<p>节目和会员登录按照网站提示操作。电脑截图中的登录状态不会复制到电视，App 不内置账号或会员；是否允许播放及对应权益以网站在当前设备上的提示为准。</p>
 
-<p>诊断页包含：实际页面地址和标题、布局宽度、可检测的视频数、独立播放器数、视频进度/帧数、媒体错误码、网络/脚本提示及真实浏览器版本。不显示网址查询参数中的令牌、密码或 Cookie。</p>
+<h2 id="电视验收">电视验收</h2>
 
-<table>
-<thead>
-<tr>
-  <th>提示</th>
-  <th>说明与下一步</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-  <td>当前页面未检测到视频</td>
-  <td>可能打开了其他内容，点“看度直播”回到首页，再选电视直播</td>
-</tr>
-<tr>
-  <td>视频尚未开始或等待数据</td>
-  <td>用光标点网页播放按钮，或使用“尝试播放”；随后查看诊断</td>
-</tr>
-<tr>
-  <td>媒体网络请求失败</td>
-  <td>页面已打开，但视频数据没能取到；截图诊断页中的网络提示</td>
-</tr>
-<tr>
-  <td>解码失败 / 格式或来源不支持</td>
-  <td>当前网页组件不能处理该媒体，试菜单里的电视浏览器</td>
-</tr>
-<tr>
-  <td>播放器位于独立网页</td>
-  <td>跨来源框架中的视频状态不能直接读取，不代表一定播放失败；用光标操作播放器或试电视浏览器</td>
-</tr>
-<tr>
-  <td>网页拒绝播放 / 全屏请求</td>
-  <td>用光标直接点网页内部的播放或全屏图标</td>
-</tr>
-</tbody>
-</table>
+<ol>
+<li>工具 → 使用说明确认版本 <strong>1.4</strong>。</li>
+<li>“全部”列表中确认两个独立新入口，第一项向上、最后一项向下均可循环。</li>
+<li>长按上下跨过边界，确认继续选择且未提前打开网页或换台；松开后按确定才播放。再测试“收藏”和只有少量频道的分组。</li>
+<li>分别进入咪咕和优酷，测试选节目、网页点击、播放声音/画面、全屏、返回和切后台停止声音。</li>
+<li>返回成都频道，确认你当前可用的直播与布局仍正常；再播放央视和四川卫视。</li>
+<li>收藏一个新入口，重启 App 后检查收藏保留；只改一个网站的布局，确认其他站点配置未改变。</li>
+</ol>
 
-<p><strong>在电视浏览器打开</strong>是可选的兼容方式，不能保证成功；若电视没有浏览器会提示并允许返回。返回键先退出视频全屏，再回到频道列表。</p>
+<p>如果网页能打开但节目黑屏，先看网站是否要求登录或提示播放限制，再用 <strong>菜单 → 网页诊断</strong> 查看媒体/网络提示；可试 <strong>切换兼容布局</strong> 或 <strong>在电视浏览器打开</strong>。网页加载完成不等于节目已经出画。</p>
 
-<h2 id="验证范围">验证范围</h2>
+<h2 id="本次验证范围">本次验证范围</h2>
 
 <ul>
-<li>53 项 Java、11 项 Python、12 项 JavaScript 逻辑回归测试通过，共 76 项。</li>
-<li>所有应用 Java 源码及测试源码编译、Android 资源编译与链接通过。既有两份工作流和签名配置没有变化。</li>
-<li>JavaScript 测试使用受控 DOM 数据验证逻辑，不是电视浏览器渲染或真实直播测试。</li>
-<li>没有生成 APK、代你运行 GitHub Actions、完成完整 Gradle/Lint 构建，也没有完成 TCL Q10M 网页缩放、成都台出画或覆盖安装的实机验收。</li>
-<li>本版未增加 App 原生 EPG/回看播放器；网页是否提供回看由网站决定。</li>
+<li><strong>62 项 Java、11 项 Python、12 项 JavaScript 逻辑测试通过，共 85 项</strong>。新增回归覆盖三个网页入口、保留成都设置、新入口互不覆盖、不误拦截原生频道、重复刷新不重复添加、列表双向循环及连续选择。</li>
+<li>JDK 17、Android 35 与现有实际依赖完成所有应用/测试 Java 编译；Android 资源编译与依赖资源链接通过。</li>
+<li>原生播放器、网络请求、更新校验、依赖/签名配置、网页适配脚本和两份 GitHub 工作流沿用 1.3。</li>
+<li>未生成 APK、代你运行 Actions 或完成完整 Gradle/Lint 构建。新增咪咕、优酷与遥控器循环尚未在 TCL Q10M 实机验收；JavaScript 测试使用受控 DOM 数据。</li>
+<li>本次没有增加 App 原生 EPG 或回看播放器，网页提供的功能以网站为准。</li>
 </ul>
-<p class="foot">完整首次配置见 docs/操作指南.md；已有用户不要重新生成签名。</p></article></div></body></html>
+<p class="foot">首次从零配置见 <a href="docs/操作指南.md">docs/操作指南.md</a>；完整验证范围见 <a href="docs/验证记录.md">docs/验证记录.md</a>。</p></article></div></body></html>

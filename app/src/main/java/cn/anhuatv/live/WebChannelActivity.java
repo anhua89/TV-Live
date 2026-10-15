@@ -39,11 +39,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import cn.anhuatv.live.core.WebChannelRoutes;
+import cn.anhuatv.live.core.WebChannelRoutes.Site;
 import cn.anhuatv.live.core.WebPagePolicy;
 import java.io.InputStream;
 import org.json.JSONObject;
 
-/** A separate, optional page for Chengdu TV; the native player is stopped by its owner. */
+/** Shared web player for the explicit website entries; native playback is stopped by its owner. */
 public final class WebChannelActivity extends Activity {
     private final Handler main = new Handler(Looper.getMainLooper());
     private WebView web;
@@ -60,19 +61,21 @@ public final class WebChannelActivity extends Activity {
     private boolean pageFailed, destroyed, foreground, pageReady, desktopMode;
     private int pageGeneration;
     private long loadedAt;
+    private Site site = Site.CHENGDU;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         immersive();
-        String saved = getPreferences(MODE_PRIVATE).getString("page_url", WebChannelRoutes.DEFAULT_URL);
-        pageUrl = WebPagePolicy.startUrl(saved);
-        if (!pageUrl.equals(saved)) getPreferences(MODE_PRIVATE).edit().putString("page_url", pageUrl).apply();
-        desktopMode = getPreferences(MODE_PRIVATE).getBoolean("desktop_mode", true);
+        site = Site.fromKey(getIntent().getStringExtra("site_key"));
+        String saved = getPreferences(MODE_PRIVATE).getString(site.urlPreference(), site.homeUrl);
+        pageUrl = WebPagePolicy.startUrl(site, saved);
+        if (!pageUrl.equals(saved)) getPreferences(MODE_PRIVATE).edit().putString(site.urlPreference(), pageUrl).apply();
+        desktopMode = getPreferences(MODE_PRIVATE).getBoolean(site.desktopPreference(), true);
         LinearLayout page = new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setBackgroundColor(Color.BLACK);
         toolbar = new LinearLayout(this); toolbar.setPadding(dp(10), dp(4), dp(10), dp(4)); toolbar.setBackgroundColor(0xFF12202E);
         addButton("频道列表", this::finish);
-        addButton("看度直播", () -> navigate(WebChannelRoutes.DEFAULT_URL));
+        addButton(site.homeButton, () -> navigate(site.homeUrl));
         addButton("播放 / 全屏", this::playOptions);
         addButton("网页工具", this::tools);
         page.addView(toolbar);
@@ -130,7 +133,7 @@ public final class WebChannelActivity extends Activity {
                 if ("about:blank".equals(url)) return;
                 pageGeneration++; pageReady = false; lastIssue = ""; lastScriptIssue = ""; videoState = new JSONObject();
                 main.removeCallbacks(videoPoll); closePopup(); applyPageSettings(url);
-                pageFailed = false; message("正在打开看度网页… 菜单键可打开工具；返回键回到频道列表。");
+                pageFailed = false; message("正在打开" + site.title + "网页… 菜单键可打开工具；返回键回到频道列表。");
                 main.removeCallbacks(slowPage); main.postDelayed(slowPage, 20000);
             }
             @Override public void onPageFinished(WebView view, String url) {
@@ -138,7 +141,7 @@ public final class WebChannelActivity extends Activity {
                 main.removeCallbacks(slowPage);
                 if (!pageFailed && url.equals(view.getUrl())) {
                     pageReady = true; loadedAt = SystemClock.elapsedRealtime(); installAdapter();
-                    message("页面已载入，正在检查视频。可用光标选择 CDTV 频道，或按“播放 / 全屏”。");
+                    message("页面已载入，正在检查视频。可用光标选择" + (site == Site.CHENGDU ? "CDTV 频道" : "节目") + "，或按“播放 / 全屏”。");
                 }
             }
             @Override public void onReceivedError(WebView view, int code, String description, String url) {
@@ -223,21 +226,21 @@ public final class WebChannelActivity extends Activity {
         boolean official = WebPagePolicy.isCditv(url);
         // Only the requested official site gets legacy HTTP-video compatibility.
         web.getSettings().setMixedContentMode(official ? WebSettings.MIXED_CONTENT_ALWAYS_ALLOW : WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
-        CookieManager.getInstance().setAcceptThirdPartyCookies(web, official);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(web, official || WebPagePolicy.isSitePage(site, url));
         web.getSettings().setTextZoom(100);
-        web.setInitialScale(desktopMode && official && web.getWidth() > 0 ? Math.max(1, Math.round(web.getWidth() * 100f / 1280f)) : 0);
+        web.setInitialScale(desktopMode && WebPagePolicy.isSitePage(site, url) && web.getWidth() > 0 ? Math.max(1, Math.round(web.getWidth() * 100f / 1280f)) : 0);
         location.setText((desktopMode ? "桌面布局 · " : "兼容布局 · ") + WebPagePolicy.displayUrl(url));
     }
     private boolean blockNavigation(String url) {
         if (WebChannelRoutes.validPageUrl(url)) return false;
         if (!"about:blank".equals(url)) {
             lastIssue = "该链接要求打开外部应用，未提供普通网页地址";
-            message("这个链接要求打开外部 App。请回到看度首页，选择“电视直播”中的 CDTV 频道。");
+            message("这个链接要求打开外部 App。可点“" + site.homeButton + "”返回网页首页，选择网页提供的内容。");
         }
         return true;
     }
     private final Runnable popupTimeout = () -> {
-        if (popup != null) { closePopup(); message("新窗口未提供可打开的网页。可回到看度直播首页，或按菜单查看网页诊断。"); }
+        if (popup != null) { closePopup(); message("新窗口未提供可打开的网页。可回到" + site.title + "首页，或按菜单查看网页诊断。"); }
     };
     private void closePopup() {
         main.removeCallbacks(popupTimeout);
@@ -249,7 +252,7 @@ public final class WebChannelActivity extends Activity {
     private void installAdapter() {
         if (web == null || !pageReady || destroyed) return;
         final int generation = pageGeneration;
-        boolean adapt = desktopMode && WebPagePolicy.isCditv(web.getUrl());
+        boolean adapt = desktopMode && WebPagePolicy.isSitePage(site, web.getUrl());
         web.evaluateJavascript(adapterScript + (adapt ? "\nwindow.__jianshiTv.desktop();" : ""), value -> {
             if (destroyed || web == null || generation != pageGeneration || !foreground) return;
             main.removeCallbacks(videoPoll); main.post(videoPoll);
@@ -259,7 +262,7 @@ public final class WebChannelActivity extends Activity {
         @Override public void run() {
             if (destroyed || !foreground || !pageReady || pageFailed || web == null) return;
             final int generation = pageGeneration;
-            String locate = WebPagePolicy.isHome(web.getUrl()) && SystemClock.elapsedRealtime() - loadedAt < 15000
+            String locate = site == Site.CHENGDU && WebPagePolicy.isHome(web.getUrl()) && SystemClock.elapsedRealtime() - loadedAt < 15000
                     ? "window.__jianshiTv.focusLive(0);" : "";
             web.evaluateJavascript("(function(){if(!window.__jianshiTv)return null;" + locate + "return window.__jianshiTv.snapshot();})()", value -> {
                 if (destroyed || !foreground || web == null || generation != pageGeneration || pageFailed) return;
@@ -279,13 +282,15 @@ public final class WebChannelActivity extends Activity {
         } else if (!videoState.optString("playError").isEmpty()) {
             message("网页未接受播放或全屏请求。请用光标点击网页内的播放 / 全屏按钮；菜单可查看诊断。");
         } else if (SystemClock.elapsedRealtime() - loadedAt < 12000) {
-            message("页面已载入，正在等待视频。可在“电视直播”中选台，再按“播放 / 全屏”。");
+            message(site == Site.CHENGDU ? "页面已载入，正在等待视频。可在“电视直播”中选台，再按“播放 / 全屏”。" :
+                    "页面已载入，请选择节目或赛事，按网页提示登录；可点“播放 / 全屏”操作。");
         } else if (count > 0) {
             message("视频尚未开始或正在等待数据。按“播放 / 全屏”尝试播放；菜单 → 网页诊断可查看错误。");
         } else if (videoState.optInt("blockedFrames") > 0) {
             message("播放器位于独立网页，暂不能读取视频状态。请用光标点击播放；菜单可使用电视浏览器。");
         } else {
-            message("当前页面未检测到视频。点顶部“看度直播”回到首页电视直播区，或菜单查看网页诊断。");
+            message("当前页面未检测到视频。可选择" + (site == Site.CHENGDU ? "电视直播频道" : "节目，或按网页提示登录") +
+                    "；点“" + site.homeButton + "”返回首页，菜单可查看网页诊断。");
         }
     }
     private void videoAction(String action) {
@@ -302,14 +307,14 @@ public final class WebChannelActivity extends Activity {
     private void resetLayout() {
         if (web == null) return;
         applyPageSettings(web.getUrl()); installAdapter();
-        if (desktopMode && WebPagePolicy.isCditv(web.getUrl()) && web.getWidth() > 0) {
+        if (desktopMode && WebPagePolicy.isSitePage(site, web.getUrl()) && web.getWidth() > 0) {
             float factor = (web.getWidth() / 1280f) / web.getScale();
             if (factor > 0 && !Float.isNaN(factor) && !Float.isInfinite(factor)) web.zoomBy(Math.max(0.01f, Math.min(100f, factor)));
         }
     }
     private void diagnostics() {
         String current = web == null ? pageUrl : web.getUrl();
-        String detail = "页面：" + WebPagePolicy.displayUrl(current) + "\n标题：" + videoState.optString("title", "未读取") +
+        String detail = "频道：" + site.title + "\n页面：" + WebPagePolicy.displayUrl(current) + "\n标题：" + videoState.optString("title", "未读取") +
                 "\n布局：" + (desktopMode ? "桌面" : "兼容") + "；网页宽度：" + videoState.optInt("width") +
                 "\n视频数：" + videoState.optInt("videos") + "；内嵌页面：" + videoState.optInt("iframes") + "；不可读取：" + videoState.optInt("blockedFrames") +
                 "\n视频就绪：" + videoState.optInt("ready") + "；暂停：" + videoState.optBoolean("paused", true) +
@@ -328,19 +333,24 @@ public final class WebChannelActivity extends Activity {
     private void message(String text) { if (!destroyed) status.setText(text); }
 
     private void tools() {
-        String[] labels = {"看度首页电视直播", "定位电视直播区", "尝试播放网页视频", "网页视频全屏", "重新适配屏幕", "放大网页", "缩小网页",
-                desktopMode ? "切换兼容布局" : "切换桌面布局", "刷新当前网页", "修改成都网页地址", "网页诊断", "在电视浏览器打开", "网页返回上一页", "返回频道列表"};
-        new AlertDialog.Builder(this).setTitle("成都电视台 · 网页工具").setItems(labels, (d, i) -> {
+        String[] labels = {site.homeButton, site == Site.CHENGDU ? "定位电视直播区" : "返回页面顶部", "尝试播放网页视频", "网页视频全屏", "重新适配屏幕", "放大网页", "缩小网页",
+                desktopMode ? "切换兼容布局" : "切换桌面布局", "刷新当前网页", "修改本频道网页地址", "网页诊断", "在电视浏览器打开", "网页返回上一页", "返回频道列表"};
+        new AlertDialog.Builder(this).setTitle(site.title + " · 网页工具").setItems(labels, (d, i) -> {
             switch (i) {
-                case 0: navigate(WebChannelRoutes.DEFAULT_URL); break;
-                case 1: if (web != null) web.evaluateJavascript(adapterScript + "\nwindow.__jianshiTv.focusLive(0,true);", null); break;
+                case 0: navigate(site.homeUrl); break;
+                case 1:
+                    if (web != null) {
+                        if (site == Site.CHENGDU) web.evaluateJavascript(adapterScript + "\nwindow.__jianshiTv.focusLive(0,true);", null);
+                        else web.scrollTo(0, 0);
+                    }
+                    break;
                 case 2: videoAction("play"); break;
                 case 3: videoAction("fullscreen"); break;
                 case 4: resetLayout(); break;
                 case 5: if (web != null) web.zoomIn(); break;
                 case 6: if (web != null) web.zoomOut(); break;
                 case 7:
-                    desktopMode = !desktopMode; getPreferences(MODE_PRIVATE).edit().putBoolean("desktop_mode", desktopMode).apply();
+                    desktopMode = !desktopMode; getPreferences(MODE_PRIVATE).edit().putBoolean(site.desktopPreference(), desktopMode).apply();
                     if (web != null) {
                         String url = WebChannelRoutes.validPageUrl(web.getUrl()) ? web.getUrl() : pageUrl;
                         web.getSettings().setUserAgentString(desktopMode ? WebPagePolicy.desktopUserAgent(defaultAgent) : defaultAgent); navigate(url);
@@ -359,10 +369,10 @@ public final class WebChannelActivity extends Activity {
     private void editUrl() {
         EditText input = new EditText(this); input.setSingleLine(true); input.setText(pageUrl);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("成都频道共用的网页地址")
-                .setMessage("填写你确认能观看的 HTTP/HTTPS 页面。只影响成都频道；可在网页内选择对应 CDTV 频道。")
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle(site.title + " · 网页地址")
+                .setMessage("填写 HTTP/HTTPS 网页地址。只影响本频道，不影响其他网页频道或原生直播。")
                 .setView(input).setPositiveButton("保存并打开", null)
-                .setNeutralButton("恢复默认", (d, i) -> saveUrl(WebChannelRoutes.DEFAULT_URL))
+                .setNeutralButton("恢复默认", (d, i) -> saveUrl(site.homeUrl))
                 .setNegativeButton("取消", null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String url = input.getText().toString().trim();
@@ -371,7 +381,7 @@ public final class WebChannelActivity extends Activity {
         })); dialog.show();
     }
     private void saveUrl(String url) {
-        pageUrl = url; getPreferences(MODE_PRIVATE).edit().putString("page_url", url).apply(); loadPage();
+        pageUrl = url; getPreferences(MODE_PRIVATE).edit().putString(site.urlPreference(), url).apply(); loadPage();
     }
     private void openBrowser() {
         String current = web == null ? null : web.getUrl();

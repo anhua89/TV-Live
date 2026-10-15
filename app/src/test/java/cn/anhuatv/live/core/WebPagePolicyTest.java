@@ -48,4 +48,27 @@ public class WebPagePolicyTest {
         assertEquals("https://cditv.cn/live", WebPagePolicy.displayUrl("https://cditv.cn/live?token=secret&key=hidden#session"));
         assertEquals("", WebPagePolicy.displayUrl("file:///private/key"));
     }
+    @Test public void platformDefaultsMatchRequestedOfficialWebsites() {
+        assertEquals("https://www.miguvideo.com/", WebPagePolicy.startUrl(WebChannelRoutes.Site.MIGU, null));
+        assertEquals("https://www.youku.com/ku/webhome", WebPagePolicy.startUrl(WebChannelRoutes.Site.YOUKU, "javascript:alert(1)"));
+        for (WebChannelRoutes.Site site : WebChannelRoutes.Site.values()) {
+            assertTrue(WebPagePolicy.isSitePage(site, site.homeUrl));
+            String custom = "https://example.com/own-player?channel=1";
+            assertEquals(custom, WebPagePolicy.startUrl(site, custom));
+        }
+        assertEquals(WebChannelRoutes.DEFAULT_URL, WebPagePolicy.startUrl(WebChannelRoutes.Site.CHENGDU, "https://www.cditv.cn/html/cdrtv/#live"));
+    }
+    @Test public void platformAdaptationStaysOnEachSitesOwnDomain() {
+        assertTrue(WebPagePolicy.isSitePage(WebChannelRoutes.Site.MIGU, "https://m.miguvideo.com/m/home/"));
+        assertTrue(WebPagePolicy.isSitePage(WebChannelRoutes.Site.YOUKU, "https://v.youku.com/v_show/id_1.html"));
+        assertFalse(WebPagePolicy.isSitePage(WebChannelRoutes.Site.MIGU, WebChannelRoutes.Site.YOUKU.homeUrl));
+        assertFalse(WebPagePolicy.isSitePage(WebChannelRoutes.Site.YOUKU, WebChannelRoutes.Site.MIGU.homeUrl));
+        assertFalse(WebPagePolicy.isSitePage(null, "https://www.youku.com/"));
+        for (String host : new String[]{"miguvideo.com", "youku.com"}) {
+            WebChannelRoutes.Site site = host.equals("youku.com") ? WebChannelRoutes.Site.YOUKU : WebChannelRoutes.Site.MIGU;
+            for (String bad : new String[]{"https://" + host + ".example.com/", "https://fake" + host + "/", "https://" + host + "@example.com/", "file:///" + host})
+                assertFalse(bad, WebPagePolicy.isSitePage(site, bad));
+            assertFalse(WebPagePolicy.isCditv(site.homeUrl));
+        }
+    }
 }

@@ -7,6 +7,21 @@ import java.util.Locale;
 public final class WebPagePolicy {
     private WebPagePolicy() {}
 
+    public static boolean isSitePage(WebChannelRoutes.Site site, String value) {
+        if (site == WebChannelRoutes.Site.CHENGDU) return isCditv(value);
+        if (site == null || !WebChannelRoutes.validPageUrl(value)) return false;
+        try {
+            String host = new URI(value).getHost().toLowerCase(Locale.ROOT);
+            String domain = site == WebChannelRoutes.Site.MIGU ? "miguvideo.com" : "youku.com";
+            return host.equals(domain) || host.endsWith("." + domain);
+        } catch (Exception e) { return false; }
+    }
+
+    public static String startUrl(WebChannelRoutes.Site site, String saved) {
+        if (site == WebChannelRoutes.Site.CHENGDU) return startUrl(saved);
+        return WebChannelRoutes.validPageUrl(saved) ? saved : site.homeUrl;
+    }
+
     public static boolean isCditv(String value) {
         if (!WebChannelRoutes.validPageUrl(value)) return false;
         try {
