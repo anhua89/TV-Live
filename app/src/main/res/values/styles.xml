@@ -6,6 +6,5 @@
         <item name="android:windowBackground">#090E16</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
-        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
