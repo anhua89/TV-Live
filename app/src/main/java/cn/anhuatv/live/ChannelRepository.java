@@ -3,6 +3,7 @@ package cn.anhuatv.live;
 import android.content.Context;
 import cn.anhuatv.live.core.Catalog;
 import cn.anhuatv.live.core.CatalogResolver;
+import cn.anhuatv.live.core.WebChannelRoutes;
 import cn.anhuatv.live.core.Models.Channel;
 import cn.anhuatv.live.core.Models.Entry;
 import cn.anhuatv.live.core.Models.Source;
@@ -37,7 +38,7 @@ public final class ChannelRepository {
     public Result load(List<Source> sources, boolean cacheOnly) throws Exception {
         List<Source> enabled = new ArrayList<>();
         for (Source s : sources) if (s.enabled) enabled.add(s);
-        if (enabled.isEmpty()) return new Result(new ArrayList<>(), "尚未启用订阅；右键 → 订阅管理");
+        if (enabled.isEmpty()) return new Result(WebChannelRoutes.withWebEntry(new ArrayList<>()), "尚未启用直播订阅；已保留成都网页入口。右键 → 订阅管理");
         ExecutorService pool = Executors.newFixedThreadPool(Math.min(3, enabled.size()));
         try {
             List<Callable<Loaded>> calls = new ArrayList<>();
@@ -54,7 +55,7 @@ public final class ChannelRepository {
                     notes.append(enabled.get(i).name).append("：刷新超时，缓存 ").append(cached.entries.size()).append(" 条\n");
                 }
             }
-            List<Channel> channels = Catalog.merge(all);
+            List<Channel> channels = WebChannelRoutes.withWebEntry(Catalog.merge(all));
             return new Result(channels, channels.size() + " 个频道\n" + notes);
         } finally { pool.shutdownNow(); }
     }

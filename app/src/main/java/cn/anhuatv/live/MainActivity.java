@@ -33,6 +33,7 @@ import cn.anhuatv.live.core.Models.Stream;
 import cn.anhuatv.live.core.PlaylistParser;
 import cn.anhuatv.live.core.RouteOrder;
 import cn.anhuatv.live.core.RouteOrder.Health;
+import cn.anhuatv.live.core.WebChannelRoutes;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,7 @@ import java.util.concurrent.Future;
 @UnstableApi
 public final class MainActivity extends Activity {
     private static final int IMPORT_PLAYLIST = 101;
+    private static final int WEB_CHANNEL = 102;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Executors.newFixedThreadPool(3);
     private final List<Channel> channels = new ArrayList<>(), visible = new ArrayList<>();
@@ -65,6 +67,8 @@ public final class MainActivity extends Activity {
     private int category, refreshGeneration, testGeneration;
     private long backAt, lastBrowseAt;
     private boolean destroyed, stopped, foreground, frameTesting;
+    private boolean webChannelOpen;
+    private String lastWebSelection = "";
     private Channel restoreChannel;
     private Stream restoreStream;
 
@@ -144,11 +148,14 @@ public final class MainActivity extends Activity {
     private void applyCatalog(ChannelRepository.Result result) {
         Channel before = player.channel(); channels.clear(); channels.addAll(result.channels); loadSummary = result.summary;
         updateVisible();
+        if (webChannelOpen) return;
         if (channels.isEmpty()) {
             cancelFrameTest(false); player.clear(); showStatus(result.summary + "\n右键 → 订阅管理，可修改或导入列表。", false); return;
         }
         Channel after = find(before == null ? store.lastChannel() : before.id);
         if (after == null) after = channels.get(0);
+        // A refresh or cold start should offer the web entry, not launch a website on its own.
+        if (WebChannelRoutes.usesWeb(after)) { player.clear(); openDrawer(); return; }
         Stream old = player.stream();
         boolean routeStillEnabled = false;
         if (old != null) for (Stream s : after.streams) if (s.key().equals(old.key())) { routeStillEnabled = true; break; }
@@ -160,6 +167,16 @@ public final class MainActivity extends Activity {
     private int numberOf(Channel c) { for (int i = 0; i < channels.size(); i++) if (channels.get(i).id.equals(c.id)) return i + 1; return 0; }
     private void tune(Channel c, Stream stream) {
         cancelFrameTest(false);
+        if (WebChannelRoutes.usesWeb(c)) {
+            if (!foreground || webChannelOpen) return;
+            webChannelOpen = true; lastWebSelection = c.id; player.suspend();
+            try {
+                startActivityForResult(new Intent(this, WebChannelActivity.class).putExtra("channel_name", c.name), WEB_CHANNEL);
+            } catch (Exception e) {
+                webChannelOpen = false; player.resume(); show("网页无法打开", "请返回频道列表后重试。" + e.getMessage());
+            }
+            return;
+        }
         if (!foreground) { store.lastChannel(c.id); stopped = true; return; }
         player.play(c, stream); adapter.notifyDataSetChanged();
     }
@@ -410,6 +427,11 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == WEB_CHANNEL) {
+            webChannelOpen = false; openDrawer();
+            for (int i = 0; i < visible.size(); i++) if (visible.get(i).id.equals(lastWebSelection)) { list.setSelection(i); break; }
+            return;
+        }
         if (request != IMPORT_PLAYLIST || result != RESULT_OK || data == null || data.getData() == null) return;
         worker.submit(() -> {
             try (InputStream in = getContentResolver().openInputStream(data.getData())) {
@@ -428,7 +450,8 @@ public final class MainActivity extends Activity {
     private void about() {
         show(getString(R.string.app_name) + " " + BuildConfig.VERSION_NAME + " · 使用说明",
                 "上下：切台；按住进入频道列表继续滚动\n确定 / 左键：频道列表；列表中左右切换分组\n长按确定：收藏当前或选中频道\n右键 / 菜单：线路、测速、订阅、更新\n数字键：输入列表编号后自动跳台\n返回：关闭列表；连续两次退出\n\n" +
-                "回看：本版未提供 EPG 或回看播放；已保留订阅中的 catchup 元数据。成都台候选需在本机验证。\n\n" +
+                "成都台：选择成都频道后打开网页，在网页中选择对应频道；菜单键可修改网页地址。其他频道仍使用原生播放器。\n" +
+                "回看：本版未提供 EPG 或回看播放；已保留订阅中的 catchup 元数据。网页是否提供回看由网站决定。\n\n" +
                 "更新仓库：" + (BuildConfig.UPDATE_REPOSITORY.isEmpty() ? "未配置" : BuildConfig.UPDATE_REPOSITORY) + "\n\n" + loadSummary);
     }
 
@@ -452,7 +475,8 @@ public final class MainActivity extends Activity {
         @Override public View getView(int position, View convert, ViewGroup parent) {
             TextView row = convert instanceof TextView ? (TextView) convert : text("", 18, Color.WHITE);
             Channel c = visible.get(position); boolean playing = player != null && player.channel() != null && player.channel().id.equals(c.id);
-            row.setText(String.format(Locale.ROOT, "%03d   %s%s", numberOf(c), c.name, store.favorites().contains(c.id) ? "  ★" : ""));
+            String name = c.name + (WebChannelRoutes.usesWeb(c) && !c.name.contains("网页") ? " · 网页" : "");
+            row.setText(String.format(Locale.ROOT, "%03d   %s%s", numberOf(c), name, store.favorites().contains(c.id) ? "  ★" : ""));
             row.setTextColor(playing ? 0xFF64DCC5 : Color.WHITE); row.setTypeface(null, playing ? Typeface.BOLD : Typeface.NORMAL);
             row.setPadding(dp(12), dp(12), dp(8), dp(12)); row.setSingleLine(true);
             row.setEllipsize(android.text.TextUtils.TruncateAt.END); return row;
@@ -461,7 +485,9 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume(); foreground = true; immersive(); if (updates != null) updates.onResume();
         if (stopped && player != null) {
-            stopped = false; Channel c = find(store.lastChannel()); if (c != null) player.play(c, null); else player.resume();
+            stopped = false; Channel c = find(store.lastChannel());
+            if (WebChannelRoutes.usesWeb(c)) openDrawer();
+            else if (c != null) player.play(c, null); else player.resume();
         }
     }
     @Override protected void onStop() {

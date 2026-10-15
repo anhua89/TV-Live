@@ -1,114 +1,88 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>简视 TV 1.1 · 升级说明</title><style>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>简视 TV 1.2 · 成都网页与升级</title><style>
 :root{--ink:#142b3a;--muted:#607785;--mint:#167c70;--line:#dbe7eb;--soft:#f3f8f9}
 *{box-sizing:border-box}body{margin:0;background:#f5f8fa;color:var(--ink);font:16px/1.85 -apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC",sans-serif}
 header{background:#113344;color:white;padding:50px 6vw 44px}header .eyebrow{color:#84d9c9;font-size:13px;letter-spacing:.16em;font-weight:700}header h1{font-size:38px;line-height:1.35;margin:10px 0}header p{color:#c6dce4;margin:12px 0 0;max-width:880px}
 .wrap{display:grid;grid-template-columns:235px minmax(0,920px);gap:32px;max-width:1250px;margin:34px auto;padding:0 24px 80px}nav{position:sticky;top:22px;align-self:start;font-size:13px;line-height:1.6}nav strong{display:block;margin-bottom:10px}nav ol{list-style:none;padding:0}nav a{display:block;padding:5px 8px;border-left:2px solid var(--line);text-decoration:none;color:var(--muted)}nav a:hover{color:var(--mint);border-color:var(--mint)}article{background:white;border:1px solid var(--line);border-radius:14px;padding:24px 38px 44px;min-width:0;box-shadow:0 8px 30px #12334406}
 h2{scroll-margin-top:22px;margin:38px 0 16px;font-size:24px;line-height:1.5;border-top:1px solid var(--line);padding-top:24px}h2:first-of-type{margin-top:8px;border:0;padding-top:0}p{margin:14px 0}a{color:#176e9c;overflow-wrap:anywhere}strong{font-weight:700}li{margin:9px 0}table{display:block;overflow:auto;border-collapse:collapse;margin:18px 0;width:100%;font-size:14px}th,td{border:1px solid var(--line);padding:11px 14px;vertical-align:top;min-width:120px;overflow-wrap:anywhere}th{background:#eaf4f3;text-align:left}td{background:#fff}tr:nth-child(even) td{background:#fafcfd}code{font:13px/1.7 Consolas,"SFMono-Regular",monospace;background:#edf4f6;border-radius:4px;padding:2px 4px;overflow-wrap:anywhere}pre{position:relative;background:#122f40;color:#e9f7fb;border-radius:9px;padding:18px 20px;overflow:auto;line-height:1.7}pre code{background:transparent;color:inherit;padding:0;overflow-wrap:normal}.intro{border-left:4px solid #32ae95;background:#eef8f5;padding:16px 20px;margin:0 0 20px;border-radius:0 7px 7px 0}.intro p{margin:0}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.tag{background:#ffffff16;border:1px solid #ffffff26;padding:3px 10px;border-radius:999px;font-size:12px}.foot{font-size:13px;color:var(--muted);margin-top:40px}.copy{position:absolute;top:7px;right:8px;border:1px solid #65828f;border-radius:4px;background:#234a5c;color:#e9f7fb;font:12px sans-serif;padding:4px 8px;cursor:pointer}
 @media(max-width:950px){.wrap{grid-template-columns:1fr;padding:0 15px}.wrap nav{position:static}nav ol{columns:2}article{padding:22px}header h1{font-size:29px}}@media print{body{background:#fff;font-size:12pt}header{padding:0;color:#123;background:#fff}header p{color:#456}nav,.tags,.copy{display:none}.wrap{display:block;margin:0;padding:0}article{border:0;padding:0;box-shadow:none}pre{white-space:pre-wrap;color:#123;background:#eef3f5}h2{break-after:avoid}tr,pre{break-inside:avoid}}
-</style></head><body><header><div class="eyebrow">JIANSHI TV / VERSION 1.1</div><h1>简视 TV 1.1 · 目录兜底与升级</h1><p>首次启动先读内置或缓存目录，再后台刷新。已安装 1.0 的用户继续使用现有仓库和签名。</p><div class="tags"><span class="tag">保留原签名</span><span class="tag">内置 best-fan 目录</span><span class="tag">源码交付，无 APK</span></div></header><div class="wrap"><nav><strong>升级目录</strong><ol><li><a href="#可以先导入列表验证">可以先导入列表验证</a></li><li><a href="#11-改动">1.1 改动</a></li><li><a href="#覆盖现有仓库并构建">覆盖现有仓库并构建</a></li><li><a href="#安装与确认">安装与确认</a></li><li><a href="#验证范围">验证范围</a></li></ol></nav><article><div class="intro"><p><strong>这次请同步整个工程：</strong>代码、资源、版本和发布流程均有更新。目录可读后，仍需在电视上验证实际出画。</p></div>
+</style></head><body><header><div class="eyebrow">JIANSHI TV / VERSION 1.2</div><h1>简视 TV 1.2 · 成都网页</h1><p>成都频道使用网页，其他频道继续原生播放。沿用当前仓库和签名。</p><div class="tags"><span class="tag">完整源码，无 APK</span><span class="tag">保留原签名</span><span class="tag">成都网页需实机验证</span></div></header><div class="wrap"><nav><strong>升级与使用</strong><ol><li><a href="#这次点击频道会发生什么">这次点击频道会发生什么</a></li><li><a href="#更新现有仓库">更新现有仓库</a></li><li><a href="#在电视安装">在电视安装</a></li><li><a href="#成都网页操作">成都网页操作</a></li><li><a href="#修改网页地址">修改网页地址</a></li><li><a href="#验收与验证范围">验收与验证范围</a></li></ol></nav><article><h1 id="简视-tv-12成都频道改用网页">简视 TV 1.2：成都频道改用网页</h1>
 
-<p>适用情况：已经安装 1.0，电视提示连接 <code>raw.githubusercontent.com:443</code> 约 7000 ms 后超时，随后显示 0 个频道。</p>
+<p>适用于已经安装本次新工程 1.0 / 1.1 的电视。应用名称仍是“简视 TV”，版本为 <strong>1.2 / versionCode 3</strong>。继续使用当前 <strong>TV-Live</strong> 仓库和同一份签名；不要重新生成密钥。</p>
 
-<p>这是频道目录未能下载的错误。它尚未证明目录里的节目流都不可播，也不能由这张图推断一定是 DNS 出错。截图已经显示域名解析出了 IP，超时发生在后续连接阶段。</p>
-
-<h2 id="可以先导入列表验证">可以先导入列表验证</h2>
-
-<p>本次另附 <code>best-fan-20261015.m3u</code>，保留 best-fan 当前列表内容，不修改直播地址。当前包含 186 条线路地址，并不等于 186 个不同频道或 186 条已验证可播放线路。</p>
-
-<ol>
-<li>在电脑下载这个 M3U 文件，复制到 U 盘。</li>
-<li>将 U 盘插入 TCL Q10M。</li>
-<li>打开当前 App → 右键 → <strong>导入本地 M3U / TXT</strong>，选择 U 盘上的文件。</li>
-<li>目录出现后，选择央视或卫视频道，使用 <strong>逐路出画实测</strong> 验证电视上的播放能力。</li>
-</ol>
-
-<p>若电视没有系统文件选择器，当前 App 会给出提示。可以直接按下面步骤构建安装 1.1，它已经内置该目录，不需要文件选择器。</p>
-
-<h2 id="11-改动">1.1 改动</h2>
+<h2 id="这次点击频道会发生什么">这次点击频道会发生什么</h2>
 
 <table>
 <thead>
 <tr>
-  <th>情况</th>
-  <th>处理</th>
+  <th>点击的频道</th>
+  <th>打开方式</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-  <td>首次启动，没有任何缓存</td>
-  <td>直接读取 APK 内的 best-fan 目录，随后后台刷新</td>
+  <td>央视、四川卫视、重庆卫视和其他非成都频道</td>
+  <td>原来的原生播放器；多源、测速、收藏等照旧</td>
 </tr>
 <tr>
-  <td>之前已有成功缓存</td>
-  <td>先显示缓存，再后台刷新</td>
+  <td>成都 CDTV / 成都电视台</td>
+  <td>打开 App 内的成都网页窗口</td>
 </tr>
 <tr>
-  <td>原始订阅可访问</td>
-  <td>使用验证通过的新目录并保存缓存</td>
-</tr>
-<tr>
-  <td>原始订阅超时</td>
-  <td>若已绑定仓库，尝试 Releases 的 channels.m3u；仍失败则保留缓存或内置目录</td>
-</tr>
-<tr>
-  <td>订阅返回错误 HTML 或空内容</td>
-  <td>不用它替换可用目录</td>
-</tr>
-<tr>
-  <td>手动停用 best-fan</td>
-  <td>按你的开关设置排除它，不强行恢复</td>
-</tr>
-<tr>
-  <td>手动改了 best-fan 的 URL</td>
-  <td>尊重自定义订阅，不自动混入默认内置列表</td>
+  <td>列表里没有成都台</td>
+  <td>在“成都”分组中补充“成都电视台（网页）”入口</td>
 </tr>
 </tbody>
 </table>
 
-<p>软件显示名称改为 <strong>简视 TV</strong>；应用标识继续为 <code>cn.anhuatv.live.v1</code>。版本已改为 <strong>1.1 / versionCode 2</strong>。</p>
+<p>“爱度网”尚未确认具体网址，因此默认先按成都电视台的“看度网”处理：<code>https://www.cditv.cn/html/cdrtv/#live</code>。这是共用入口，<strong>需要在网页内选择对应的 CDTV 频道</strong>；没有声称点击 CDTV-2 就已自动进入二套实播。</p>
 
-<p>内置目录会随网络地址变化而过时，所以仍保留在线刷新、本地导入和自定义订阅。GitHub Releases 地址只是另一个可尝试入口，不承诺电视一定能连通 GitHub。</p>
+<p>开发环境访问这个地址返回 <strong>HTTP 403</strong>，所以本包完成的是网页入口和操作功能，<strong>尚未验证成都节目能够播放</strong>。如果你说的是另一网站，或你已有可播放的具体页面，可以在电视里直接修改网址，无需重打包。网站自身的访问限制、视频格式和电视网页组件兼容性仍可能影响播放。</p>
 
-<h2 id="覆盖现有仓库并构建">覆盖现有仓库并构建</h2>
-
-<p>本次修改了应用代码、资源、版本和正式发布流程，<strong>需要同步整个工程内容</strong>。</p>
+<h2 id="更新现有仓库">更新现有仓库</h2>
 
 <ol>
-<li>下载新版完整代码 ZIP，解压，进入其中的 <code>jianshi-tv-1.1</code> 文件夹。该层应能直接看到 <code>app</code>、<code>tools</code>、<code>.github</code>、<code>gradlew.bat</code> 和 <code>version.properties</code>。</li>
-<li>打开 GitHub Desktop，选择现有 <strong>TV-Live</strong> 仓库，先点 <strong>Fetch origin</strong>；若出现 <strong>Pull origin</strong>，先完成拉取，包含你此前在网页上的修改。</li>
-<li>点 <strong>Repository → Show in Explorer</strong>，打开你正在维护的本地仓库根目录。</li>
-<li>把新版工程文件夹<strong>里面的所有内容</strong>复制过去，覆盖同名文件。不要再套一层 <code>jianshi-tv-1.1</code>，也不要删除仓库自身的 <code>.git</code> 目录。</li>
-<li>当前四项 Secrets、签名密钥和 GitHub 仓库均继续使用；私人签名备份仍放在代码目录之外。</li>
-<li>在 Desktop 的 Summary 填 <code>Fix first-start catalog and rename app</code>，点击 <strong>Commit to main</strong>，再点 <strong>Push origin</strong>。</li>
-<li>等待最新提交的 <strong>Code checks</strong>。</li>
-<li>检查通过后进入 Actions → <strong>Build signed TV APK → Run workflow</strong>，保持发布选项开启。</li>
-<li>成功后在 Releases 下载 <strong>JianshiTV-1.1.apk</strong>。</li>
+<li>下载完整源码 ZIP 并解压，打开其中的 <code>jianshi-tv-1.2</code>。这一层应能看到 <code>app</code>、<code>tools</code>、<code>.github</code>、<code>gradlew.bat</code> 和 <code>version.properties</code>。</li>
+<li>打开 GitHub Desktop，选择 <strong>TV-Live</strong>，点击 <strong>Fetch origin</strong>；如果出现 <strong>Pull origin</strong>，先拉取。</li>
+<li>点击 <strong>Repository → Show in Explorer</strong> 打开当前仓库根目录。</li>
+<li>将 <code>jianshi-tv-1.2</code> <strong>里面的所有内容</strong>复制到仓库根目录，覆盖同名文件。不要把整个文件夹再套在仓库里面，不要删除仓库的 <code>.git</code>。</li>
+<li>Summary 填 <code>Open Chengdu TV in web page</code>，点 <strong>Commit to main</strong>，再点 <strong>Push origin</strong>。</li>
+<li>等待最新提交的 <strong>Code checks</strong> 通过。</li>
+<li>GitHub → Actions → <strong>Build signed TV APK → Run workflow</strong>，保持发布选项开启。</li>
+<li>正式发布完成后，Releases 应出现 <strong>v1.2</strong>，附件含 <strong>JianshiTV-1.2.apk</strong>、<strong>update.json</strong> 和频道目录。</li>
 </ol>
 
-<p>如果你的仓库已经使用过 v1.1，发布检查会拒绝同名标签。此时需要递增 versionCode、versionName，再发布新版本；不要覆盖已发布版本。</p>
+<p>源码包本身不能直接安装，也不会自动更新电视。必须先完成上面的构建与正式发布。如果已经发布过同名 v1.2，需要同时递增 versionName / versionCode 后再发；不要覆盖旧 Release。</p>
 
-<h2 id="安装与确认">安装与确认</h2>
+<h2 id="在电视安装">在电视安装</h2>
 
-<p>考虑到电视当前访问 GitHub 存在超时，建议这一次在电脑下载 APK，再用 U 盘覆盖安装，保留原 App 的数据。<strong>使用同一份签名，不要重新生成密钥。</strong></p>
+<p>电视能够访问 GitHub Releases 时：原 App → 右键 → <strong>检查应用更新</strong> → 下载 → 系统确认安装。</p>
 
-<p>安装后：</p>
+<p>如果检查或下载超时：在电脑从同一个 Release 下载 <strong>JianshiTV-1.2.apk</strong>，用 U 盘覆盖安装。沿用原来四项 Secrets 中的签名材料，才能保留收藏和设置；不需要先卸载。</p>
+
+<h2 id="成都网页操作">成都网页操作</h2>
 
 <ol>
-<li>工具 → 使用说明显示 <strong>简视 TV 1.1</strong>。</li>
-<li>启动时先出现目录，不再必须等待 Raw 下载完成。</li>
-<li>网络刷新失败时，目录仍保留；状态中可看到使用缓存或内置目录。</li>
-<li>对央视和卫视分别做逐路出画测试。首帧成功后再观察几分钟，确认稳定性和音画同步。</li>
+<li>打开频道列表，左右切到 <strong>成都</strong>，选择成都频道并按确定。</li>
+<li>页面加载后，方向键移动红色光标，确定键点击网页的播放按钮或频道按钮。</li>
+<li>顶部按钮可返回频道列表、刷新网页、修改网址、打开工具。<strong>菜单键</strong>也可以随时打开网页工具。</li>
+<li>频道加减键或翻页键可滚动网页。网页工具中可放大、缩小、返回网页上一页或使用电视浏览器打开。</li>
+<li>网页视频进入全屏后，第一次返回退出全屏；再按返回回到原来的频道列表。</li>
 </ol>
 
-<p>频道目录加载与节目流播放是两项检查。1.1 已针对前者加入兜底；后者仍取决于四川移动到各直播服务器的连通性、权限、编码与电视解码能力，不能仅凭目录文件推定成功。</p>
+<p>“网页已加载”仅指页面完成载入，不表示直播已出画。若网页内没有播放画面，先确认网站是否仍提供该频道，或改用已在你家网络验证可用的页面。</p>
 
-<h2 id="验证范围">验证范围</h2>
+<h2 id="修改网页地址">修改网页地址</h2>
+
+<p>成都网页中按 <strong>菜单 → 修改成都网页地址</strong>，输入你确认可用的完整网址，选择 <strong>保存并打开</strong>。该地址由成都频道共用，不会改央视、卫视的订阅或播放方式。也可以点 <strong>恢复默认</strong>。</p>
+
+<p>如果电视显示网页组件不可用，可以试 <strong>菜单 → 在电视浏览器打开</strong>。若没有浏览器，可返回频道列表继续看其他频道。</p>
+
+<h2 id="验收与验证范围">验收与验证范围</h2>
 
 <ul>
-<li>所有应用 Java 与资源编译、资源链接通过。</li>
-<li>38 项 Java 测试与 11 项 Python 测试通过。</li>
-<li>新增回归覆盖无网络首次启动、Raw 超时、缓存优先、HTML 错误页、内置真实列表、发布目录后备入口及构建端更新失败保留旧目录。</li>
-<li>工作流通过 actionlint 检查。</li>
-<li>未生成 APK，未代你运行仓库 Actions，未做 TCL Q10M 实机播放与覆盖安装验收。</li>
+<li>45 项 Java 测试、11 项 Python 测试通过，共 56 项；应用 Java 源码和资源编译/链接通过；工作流静态检查通过。</li>
+<li>未生成 APK，未代你在 GitHub 发布，也未做 TCL Q10M 上的网页实播验收或完整 Gradle/Lint 验证。</li>
+<li>安装后先确认央视和四川卫视仍使用原生播放器，再测试成都网页、遥控器点击、视频全屏、返回列表和后台停止声音。</li>
+<li>App 的 EPG 和回看播放仍未实现；网页是否提供回看由网站决定。</li>
 </ul>
-<p class="foot">首次从零配置请读 <a href="docs/操作指南.md">原始操作指南</a>；本版说明优先。<br><a href="README.md">工程说明</a> · <a href="docs/验证记录.md">验证记录</a></p></article></div></body></html>
+<p class="foot">首次从零配置请阅读 docs/操作指南.md；已有 1.0 / 1.1 不必重新生成密钥。</p></article></div></body></html>
