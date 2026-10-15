@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -19,10 +19,31 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
-      - name: Install Android SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Verify preinstalled Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          if [ ! -d "$sdk_root" ]; then
+            echo '::error::The ubuntu-24.04 runner has no Android SDK at the expected path.'
+            exit 1
+          fi
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk_root" "$sdk_root" >> "$GITHUB_ENV"
+          printf 'sdk.dir=%s\n' "$sdk_root" > local.properties
+          if [ ! -f "$sdk_root/platforms/android-35/android.jar" ] || [ ! -x "$sdk_root/build-tools/35.0.0/aapt2" ]; then
+            sdk_manager="$sdk_root/cmdline-tools/latest/bin/sdkmanager"
+            if [ ! -x "$sdk_manager" ]; then sdk_manager="$(command -v sdkmanager || true)"; fi
+            if [ -z "$sdk_manager" ]; then echo '::error::sdkmanager is unavailable.'; exit 1; fi
+            license_input="$(mktemp)"
+            for i in {1..100}; do printf 'y\n'; done > "$license_input"
+            "$sdk_manager" --sdk_root="$sdk_root" --licenses < "$license_input"
+            rm -f "$license_input"
+            "$sdk_manager" --sdk_root="$sdk_root" 'platforms;android-35' 'build-tools;35.0.0'
+          fi
+          test -f "$sdk_root/platforms/android-35/android.jar"
+          test -x "$sdk_root/build-tools/35.0.0/aapt2"
+          test -x "$sdk_root/build-tools/35.0.0/apksigner"
       - name: Check source, tests and lint
         run: |
           chmod +x gradlew
