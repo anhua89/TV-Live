@@ -23,7 +23,8 @@ def check():
     required = ['gradlew', 'gradlew.bat', 'app/build.gradle', 'version.properties',
                 '.github/workflows/check.yml', '.github/workflows/release.yml',
                 'tools/New-SigningKey.ps1', 'README.md', 'docs/操作指南.md']
-    required += ['app/src/main/assets/cdtv_tv.js', 'tools/test_web_adapter.cjs']
+    required += ['app/src/main/assets/cdtv_tv.js', 'tools/test_web_adapter.cjs',
+                 'app/src/main/assets/video_sites_tv.js', 'tools/test_video_sites.cjs']
     for path in required:
         assert (ROOT / path).is_file(), path
     with zipfile.ZipFile(ROOT / 'gradle/wrapper/gradle-wrapper.jar') as wrapper:
@@ -45,4 +46,4 @@ if __name__ == '__main__':
     node = shutil.which('node')
     if not node:
         sys.exit('Web adapter checks require Node.js 18 or newer. The ubuntu-24.04 GitHub runner includes Node.js.')
-    sys.exit(subprocess.run([node, '--test', str(ROOT / 'tools/test_web_adapter.cjs')], cwd=ROOT).returncode)
+    sys.exit(subprocess.run([node, '--test', str(ROOT / 'tools/test_web_adapter.cjs'), str(ROOT / 'tools/test_video_sites.cjs')], cwd=ROOT).returncode)

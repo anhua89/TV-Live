@@ -18,6 +18,7 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.text.InputType;
 import android.view.KeyEvent;
+import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.CookieManager;
+import android.webkit.PermissionRequest;
+import android.webkit.RenderProcessGoneDetail;
+import android.webkit.WebViewRenderProcess;
+import android.webkit.WebViewRenderProcessClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -41,6 +46,7 @@ import android.widget.Toast;
 import cn.anhuatv.live.core.WebChannelRoutes;
 import cn.anhuatv.live.core.WebChannelRoutes.Site;
 import cn.anhuatv.live.core.WebPagePolicy;
+import cn.anhuatv.live.core.VideoSitePolicy;
 import java.io.InputStream;
 import org.json.JSONObject;
 
@@ -62,6 +68,12 @@ public final class WebChannelActivity extends Activity {
     private int pageGeneration;
     private long loadedAt;
     private Site site = Site.CHENGDU;
+    private boolean siteProbeStarted, probeInFlight, rendererUnresponsive, siteLayoutFitted;
+    private long probeStartedAt;
+    private String lastPageAddress = "";
+    private AlertDialog recoveryDialog, mediaPermissionDialog;
+    private PermissionRequest mediaPermission;
+    private final java.util.Set<String> mediaOrigins = new java.util.HashSet<>();
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -76,7 +88,7 @@ public final class WebChannelActivity extends Activity {
         toolbar = new LinearLayout(this); toolbar.setPadding(dp(10), dp(4), dp(10), dp(4)); toolbar.setBackgroundColor(0xFF12202E);
         addButton("频道列表", this::finish);
         addButton(site.homeButton, () -> navigate(site.homeUrl));
-        addButton("播放 / 全屏", this::playOptions);
+        addButton(VideoSitePolicy.enabled(site) ? "播放 / 修复" : "播放 / 全屏", this::playOptions);
         addButton("网页工具", this::tools);
         page.addView(toolbar);
         status = new TextView(this); status.setTextColor(Color.WHITE); status.setTextSize(14);
@@ -108,12 +120,14 @@ public final class WebChannelActivity extends Activity {
     @SuppressLint("SetJavaScriptEnabled")
     private void createWeb() {
         web = new WebView(this); web.setBackgroundColor(Color.BLACK);
+        final WebView owner = web;
         defaultAgent = web.getSettings().getUserAgentString();
-        try (InputStream in = getAssets().open("cdtv_tv.js")) { adapterScript = Net.decode(Net.read(in, 128 * 1024)); }
+        try (InputStream in = getAssets().open(VideoSitePolicy.enabled(site) ? "video_sites_tv.js" : "cdtv_tv.js")) { adapterScript = Net.decode(Net.read(in, 128 * 1024)); }
         catch (Exception e) { throw new IllegalStateException("网页适配文件缺失", e); }
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
-        settings.setUserAgentString(desktopMode ? WebPagePolicy.desktopUserAgent(defaultAgent) : defaultAgent);
+        settings.setUserAgentString(VideoSitePolicy.enabled(site) ? VideoSitePolicy.userAgent(defaultAgent, desktopMode) :
+                desktopMode ? WebPagePolicy.desktopUserAgent(defaultAgent) : defaultAgent);
         settings.setTextZoom(100); settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
         settings.setUseWideViewPort(true); settings.setLoadWithOverviewMode(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
@@ -127,52 +141,96 @@ public final class WebChannelActivity extends Activity {
                 return blockNavigation(url);
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return blockNavigation(request.getUrl().toString());
+                return request.isForMainFrame() && request.hasGesture() ? routeNavigation(request.getUrl().toString()) : blockNavigation(request.getUrl().toString());
             }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) {
-                if ("about:blank".equals(url)) return;
+                if (view != web || "about:blank".equals(url)) return;
                 pageGeneration++; pageReady = false; lastIssue = ""; lastScriptIssue = ""; videoState = new JSONObject();
+                lastPageAddress = url; siteProbeStarted = false; probeInFlight = false; rendererUnresponsive = false;
+                siteLayoutFitted = false;
+                main.removeCallbacks(sitePoll);
                 main.removeCallbacks(videoPoll); closePopup(); applyPageSettings(url);
                 pageFailed = false; message("正在打开" + site.title + "网页… 菜单键可打开工具；返回键回到频道列表。");
                 main.removeCallbacks(slowPage); main.postDelayed(slowPage, 20000);
             }
             @Override public void onPageFinished(WebView view, String url) {
-                if ("about:blank".equals(url)) return;
+                if (view != web || "about:blank".equals(url)) return;
                 main.removeCallbacks(slowPage);
                 if (!pageFailed && url.equals(view.getUrl())) {
-                    pageReady = true; loadedAt = SystemClock.elapsedRealtime(); installAdapter();
+                    pageReady = true;
+                    if (!siteProbeStarted) loadedAt = SystemClock.elapsedRealtime();
+                    installAdapter();
                     message("页面已载入，正在检查视频。可用光标选择" + (site == Site.CHENGDU ? "CDTV 频道" : "节目") + "，或按“播放 / 全屏”。");
                 }
             }
+            @Override public void doUpdateVisitedHistory(WebView view, String url, boolean reload) {
+                if (view != web || !VideoSitePolicy.enabled(site) || !WebChannelRoutes.validPageUrl(url)) return;
+                if (!WebPagePolicy.displayUrl(url).equals(WebPagePolicy.displayUrl(lastPageAddress))) {
+                    loadedAt = SystemClock.elapsedRealtime(); videoState = new JSONObject(); siteLayoutFitted = false;
+                }
+                lastPageAddress = url;
+                location.setText((desktopMode ? "桌面布局 · " : "手机网页 · ") + WebPagePolicy.displayUrl(url));
+            }
+            @TargetApi(26)
+            @Override public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                if (view != web) return true;
+                if (!VideoSitePolicy.enabled(site)) return false;
+                lastIssue = detail.didCrash() ? "网页组件已停止运行" : "网页组件被系统结束";
+                rendererUnresponsive = false;
+                releaseSiteWeb(); message(lastIssue + "。菜单 → 播放修复，可重新打开或使用电视浏览器。");
+                return true;
+            }
             @Override public void onReceivedError(WebView view, int code, String description, String url) {
+                if (view != web) return;
                 if (Build.VERSION.SDK_INT < 23) pageError("网页连接失败：" + description);
             }
             @TargetApi(23)
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (view != web) return;
                 if (request.isForMainFrame()) pageError("网页连接失败：" + error.getDescription());
                 else lastIssue = "子资源连接失败：" + WebPagePolicy.displayUrl(request.getUrl().toString());
             }
             @TargetApi(23)
             @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
+                if (view != web) return;
                 if (request.isForMainFrame()) pageError("网站返回 HTTP " + response.getStatusCode());
                 else lastIssue = "子资源 HTTP " + response.getStatusCode() + "：" + WebPagePolicy.displayUrl(request.getUrl().toString());
             }
             @Override public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                if (view != web) { handler.cancel(); return; }
                 handler.cancel(); pageError("网页证书校验失败");
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            @Override public void onProgressChanged(WebView view, int progress) {
+                if (view == web && progress >= 40 && VideoSitePolicy.enabled(site)) startSiteProbe();
+            }
             @Override public boolean onConsoleMessage(ConsoleMessage msg) {
+                if (owner != web) return false;
                 if (msg.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
                     String line = msg.message();
                     lastScriptIssue = line.contains("Mixed Content") ? "网页报告混合内容被拦截" :
                             line.contains("NotSupportedError") ? "网页报告格式或功能不支持" :
-                            line.contains("NotAllowedError") ? "网页拒绝自动播放" : "网页脚本错误（第 " + msg.lineNumber() + " 行）";
+                            line.contains("NotAllowedError") ? "网页拒绝自动播放" :
+                            line.contains("SyntaxError") || line.contains("Unexpected token") ? "网页脚本语法与当前内核不兼容（第 " + msg.lineNumber() + " 行）" :
+                            "网页脚本错误（第 " + msg.lineNumber() + " 行）：" + WebPagePolicy.displayUrl(msg.sourceId());
                 }
                 return false;
             }
+            @Override public void onPermissionRequest(PermissionRequest request) {
+                if (owner != web) { request.deny(); return; }
+                if (VideoSitePolicy.enabled(site)) main.post(() -> requestProtectedMedia(request)); else request.deny();
+            }
+            @Override public void onPermissionRequestCanceled(PermissionRequest request) {
+                main.post(() -> {
+                    if (mediaPermission == request) {
+                        mediaPermission = null;
+                        if (mediaPermissionDialog != null) mediaPermissionDialog.dismiss();
+                    }
+                });
+            }
             @Override public boolean onCreateWindow(WebView view, boolean dialog, boolean gesture, Message message) {
-                if (!gesture || destroyed || !foreground) return false;
+                if (view != web || !gesture || destroyed || !foreground) return false;
                 closePopup();
                 popup = new WebView(WebChannelActivity.this);
                 popup.getSettings().setJavaScriptEnabled(true);
@@ -201,16 +259,18 @@ public final class WebChannelActivity extends Activity {
                 main.postDelayed(popupTimeout, 10000); return true;
             }
             @Override public void onShowCustomView(View view, CustomViewCallback callback) {
+                if (owner != web || destroyed) { callback.onCustomViewHidden(); return; }
                 if (fullscreen != null) { callback.onCustomViewHidden(); return; }
                 fullscreen = view; fullscreenCallback = callback;
                 web.setVisibility(View.GONE); toolbar.setVisibility(View.GONE); status.setVisibility(View.GONE); location.setVisibility(View.GONE);
                 content.addView(view, new FrameLayout.LayoutParams(-1, -1));
                 pointer.bringToFront(); content.requestFocus(); immersive();
             }
-            @Override public void onHideCustomView() { leaveFullscreen(); }
+            @Override public void onHideCustomView() { if (owner == web) leaveFullscreen(); }
         });
         content.addView(web, new FrameLayout.LayoutParams(-1, -1));
         content.addView(pointer, new FrameLayout.LayoutParams(-1, -1));
+        if (VideoSitePolicy.enabled(site) && Build.VERSION.SDK_INT >= 29) watchRenderer();
         content.requestFocus();
     }
 
@@ -220,7 +280,17 @@ public final class WebChannelActivity extends Activity {
     }
     private void navigate(String url) {
         if (web == null || destroyed || !WebChannelRoutes.validPageUrl(url)) return;
+        if (VideoSitePolicy.enabled(site)) url = VideoSitePolicy.page(site, url, desktopMode);
+        lastPageAddress = url;
         resumeUrl = null; leaveFullscreen(); web.stopLoading(); applyPageSettings(url); web.loadUrl(url); content.requestFocus();
+    }
+    private boolean routeNavigation(String url) {
+        // Convert a deliberate program click only. Server redirects must remain free to finish.
+        if (!desktopMode && VideoSitePolicy.isPlaybackPage(site, url)) {
+            String routed = VideoSitePolicy.page(site, url, desktopMode);
+            if (!url.equals(routed)) { navigate(routed); return true; }
+        }
+        return blockNavigation(url);
     }
     private void applyPageSettings(String url) {
         boolean official = WebPagePolicy.isCditv(url);
@@ -228,8 +298,9 @@ public final class WebChannelActivity extends Activity {
         web.getSettings().setMixedContentMode(official ? WebSettings.MIXED_CONTENT_ALWAYS_ALLOW : WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, official || WebPagePolicy.isSitePage(site, url));
         web.getSettings().setTextZoom(100);
-        web.setInitialScale(desktopMode && WebPagePolicy.isSitePage(site, url) && web.getWidth() > 0 ? Math.max(1, Math.round(web.getWidth() * 100f / 1280f)) : 0);
-        location.setText((desktopMode ? "桌面布局 · " : "兼容布局 · ") + WebPagePolicy.displayUrl(url));
+        int width = VideoSitePolicy.desktopWidth(site);
+        web.setInitialScale(desktopMode && WebPagePolicy.isSitePage(site, url) && web.getWidth() > 0 ? Math.max(1, Math.round(web.getWidth() * 100f / width)) : 0);
+        location.setText((desktopMode ? "桌面布局 · " : VideoSitePolicy.enabled(site) ? "手机网页 · " : "兼容布局 · ") + WebPagePolicy.displayUrl(url));
     }
     private boolean blockNavigation(String url) {
         if (WebChannelRoutes.validPageUrl(url)) return false;
@@ -251,12 +322,134 @@ public final class WebChannelActivity extends Activity {
     }
     private void installAdapter() {
         if (web == null || !pageReady || destroyed) return;
+        if (VideoSitePolicy.enabled(site)) { startSiteProbe(); return; }
         final int generation = pageGeneration;
         boolean adapt = desktopMode && WebPagePolicy.isSitePage(site, web.getUrl());
         web.evaluateJavascript(adapterScript + (adapt ? "\nwindow.__jianshiTv.desktop();" : ""), value -> {
             if (destroyed || web == null || generation != pageGeneration || !foreground) return;
             main.removeCallbacks(videoPoll); main.post(videoPoll);
         });
+    }
+    private void startSiteProbe() {
+        if (web == null || destroyed || !foreground || pageFailed || !WebChannelRoutes.validPageUrl(web.getUrl())) return;
+        if (!siteProbeStarted) {
+            siteProbeStarted = true; pageReady = true; loadedAt = SystemClock.elapsedRealtime();
+            main.removeCallbacks(sitePoll); main.post(sitePoll);
+        }
+    }
+    private final Runnable sitePoll = new Runnable() {
+        @Override public void run() {
+            if (destroyed || !foreground || !pageReady || pageFailed || web == null) return;
+            long now = SystemClock.elapsedRealtime();
+            if (rendererUnresponsive || (probeInFlight && now - probeStartedAt >= 8000)) {
+                message("网页长时间未响应。菜单 → 播放修复，可重新打开、切换手机网页或返回频道列表。");
+            } else if (!probeInFlight) {
+                probeInFlight = true; probeStartedAt = now;
+                final int generation = pageGeneration; final WebView active = web;
+                boolean official = WebPagePolicy.isSitePage(site, active.getUrl());
+                String layout = official ? "window.__jianshiTv.layout(" + (desktopMode ? VideoSitePolicy.desktopWidth(site) : 0) + ");" : "";
+                active.evaluateJavascript(adapterScript + "\n(function(){" + layout + "return window.__jianshiTv.snapshot();})()", value -> {
+                    if (destroyed || active != web || generation != pageGeneration || !foreground) return;
+                    probeInFlight = false;
+                    try {
+                        videoState = new JSONObject(value);
+                        if (site == Site.MIGU && desktopMode && official && !siteLayoutFitted && videoState.optInt("width") >= 1500 && active.getWidth() > 0) {
+                            float factor = (active.getWidth() / 1920f) / active.getScale();
+                            if (factor > 0 && !Float.isNaN(factor) && !Float.isInfinite(factor)) active.zoomBy(Math.max(0.01f, Math.min(100f, factor)));
+                            siteLayoutFitted = true;
+                        }
+                        if (VideoSitePolicy.isPlaybackPage(site, active.getUrl()) && SystemClock.elapsedRealtime() - loadedAt > 25000 &&
+                                !videoState.optBoolean("moving") && videoState.optInt("ready") < 2) {
+                            message("网站播放器仍未开始。请先看网页的登录或会员提示；菜单 → 播放修复，可切换手机网页或重新打开。");
+                        } else updateVideoStatus();
+                    } catch (Exception e) { message("网页检测暂不可用。菜单 → 播放修复，可重新打开网页或使用电视浏览器。"); }
+                });
+            }
+            // Schedule outside the JavaScript callback: a stuck renderer cannot stop this timeout.
+            main.postDelayed(this, 1800);
+        }
+    };
+
+    @TargetApi(29)
+    private void watchRenderer() {
+        web.setWebViewRenderProcessClient(new WebViewRenderProcessClient() {
+            @Override public void onRenderProcessUnresponsive(WebView view, WebViewRenderProcess renderer) {
+                if (view != web || destroyed) return;
+                rendererUnresponsive = true;
+                message("网页已无响应。菜单 → 播放修复，可重新打开或切换手机网页；返回键可离开。");
+            }
+            @Override public void onRenderProcessResponsive(WebView view, WebViewRenderProcess renderer) {
+                if (view == web) rendererUnresponsive = false;
+            }
+        });
+    }
+    @TargetApi(29)
+    private void stopUnresponsiveRenderer(WebView old) {
+        WebViewRenderProcess renderer = old.getWebViewRenderProcess();
+        if (renderer != null) renderer.terminate();
+    }
+    private void releaseSiteWeb() {
+        pageGeneration++; siteProbeStarted = false; probeInFlight = false; pageReady = false;
+        main.removeCallbacks(sitePoll); main.removeCallbacks(videoPoll); main.removeCallbacks(slowPage);
+        closePopup(); cancelMediaPermission(); leaveFullscreen();
+        WebView old = web; web = null;
+        if (old != null) {
+            if (old.getParent() instanceof ViewGroup) ((ViewGroup) old.getParent()).removeView(old);
+            if (rendererUnresponsive && Build.VERSION.SDK_INT >= 29) stopUnresponsiveRenderer(old);
+            old.destroy();
+        }
+        if (pointer.getParent() instanceof ViewGroup) ((ViewGroup) pointer.getParent()).removeView(pointer);
+    }
+    private String currentSitePage() {
+        String current = web == null ? lastPageAddress : web.getUrl();
+        return WebChannelRoutes.validPageUrl(current) ? current : pageUrl;
+    }
+    private void reopenSite(String target) {
+        releaseSiteWeb(); rendererUnresponsive = false; pageFailed = false;
+        try { createWeb(); content.post(() -> navigate(target)); }
+        catch (RuntimeException | LinkageError e) { releaseSiteWeb(); message("网页组件无法重新打开，可从菜单选择电视浏览器或返回频道列表。"); }
+    }
+    private void switchSitePage() {
+        String current = currentSitePage();
+        desktopMode = !desktopMode;
+        getPreferences(MODE_PRIVATE).edit().putBoolean(site.desktopPreference(), desktopMode).apply();
+        reopenSite(VideoSitePolicy.page(site, current, desktopMode));
+    }
+    private void recoverSite() {
+        if (recoveryDialog != null && recoveryDialog.isShowing()) return;
+        recoveryDialog = new AlertDialog.Builder(this).setTitle(site.title + " · 播放修复")
+                .setItems(new String[]{"重新打开当前网页", desktopMode ? "切换手机网页" : "切换桌面网页", "在电视浏览器打开", "查看网页诊断", "返回频道列表"}, (d, i) -> {
+                    if (i == 0) reopenSite(currentSitePage());
+                    else if (i == 1) switchSitePage();
+                    else if (i == 2) openBrowser();
+                    else if (i == 3) diagnostics();
+                    else finish();
+                }).setNegativeButton("继续当前网页", null).create();
+        recoveryDialog.setOnDismissListener(d -> recoveryDialog = null); recoveryDialog.show();
+    }
+    private void requestProtectedMedia(PermissionRequest request) {
+        boolean protectedVideo = false;
+        for (String resource : request.getResources()) if (PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID.equals(resource)) protectedVideo = true;
+        String origin = request.getOrigin().toString();
+        if (!foreground || destroyed || web == null || !protectedVideo || !VideoSitePolicy.protectedMediaOrigin(site, web.getUrl(), origin)) { request.deny(); return; }
+        if (mediaOrigins.contains(origin)) { request.grant(new String[]{PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID}); return; }
+        cancelMediaPermission(); mediaPermission = request;
+        mediaPermissionDialog = new AlertDialog.Builder(this).setTitle("允许网站播放受保护的视频？")
+                .setMessage(WebPagePolicy.displayUrl(origin) + " 请求使用设备的受保护媒体标识。允许后，网站仍会检查账号、会员和设备支持情况。")
+                .setPositiveButton("允许本次使用", (d, i) -> {
+                    if (mediaPermission != request) return;
+                    mediaPermission = null;
+                    if (foreground && web != null && VideoSitePolicy.protectedMediaOrigin(site, web.getUrl(), origin)) {
+                        mediaOrigins.add(origin); request.grant(new String[]{PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID});
+                    } else request.deny();
+                }).setNegativeButton("拒绝", (d, i) -> { if (mediaPermission == request) { mediaPermission = null; request.deny(); } })
+                .setOnCancelListener(d -> cancelMediaPermission()).create();
+        mediaPermissionDialog.show();
+    }
+    private void cancelMediaPermission() {
+        PermissionRequest pending = mediaPermission; mediaPermission = null;
+        if (pending != null) pending.deny();
+        if (mediaPermissionDialog != null) { mediaPermissionDialog.dismiss(); mediaPermissionDialog = null; }
     }
     private final Runnable videoPoll = new Runnable() {
         @Override public void run() {
@@ -301,41 +494,56 @@ public final class WebChannelActivity extends Activity {
         });
     }
     private void playOptions() {
-        new AlertDialog.Builder(this).setTitle("网页视频").setItems(new String[]{"尝试播放", "网页视频全屏"},
-                (d, i) -> videoAction(i == 0 ? "play" : "fullscreen")).setNegativeButton("返回", null).show();
+        String[] actions = VideoSitePolicy.enabled(site) ? new String[]{"尝试播放 / 显示控制条", "网页视频全屏", "播放修复（黑屏 / 一直加载）"} :
+                new String[]{"尝试播放", "网页视频全屏"};
+        new AlertDialog.Builder(this).setTitle("网页视频").setItems(actions,
+                (d, i) -> { if (i == 2) recoverSite(); else videoAction(i == 0 ? "play" : "fullscreen"); }).setNegativeButton("返回", null).show();
     }
     private void resetLayout() {
         if (web == null) return;
         applyPageSettings(web.getUrl()); installAdapter();
         if (desktopMode && WebPagePolicy.isSitePage(site, web.getUrl()) && web.getWidth() > 0) {
-            float factor = (web.getWidth() / 1280f) / web.getScale();
+            float factor = (web.getWidth() / (float) VideoSitePolicy.desktopWidth(site)) / web.getScale();
             if (factor > 0 && !Float.isNaN(factor) && !Float.isInfinite(factor)) web.zoomBy(Math.max(0.01f, Math.min(100f, factor)));
         }
     }
     private void diagnostics() {
-        String current = web == null ? pageUrl : web.getUrl();
+        String current = VideoSitePolicy.enabled(site) ? currentSitePage() : web == null ? pageUrl : web.getUrl();
         String detail = "频道：" + site.title + "\n页面：" + WebPagePolicy.displayUrl(current) + "\n标题：" + videoState.optString("title", "未读取") +
                 "\n布局：" + (desktopMode ? "桌面" : "兼容") + "；网页宽度：" + videoState.optInt("width") +
                 "\n视频数：" + videoState.optInt("videos") + "；内嵌页面：" + videoState.optInt("iframes") + "；不可读取：" + videoState.optInt("blockedFrames") +
                 "\n视频就绪：" + videoState.optInt("ready") + "；暂停：" + videoState.optBoolean("paused", true) +
                 "\n视频进度：" + videoState.optDouble("time", -1) + "；视频帧：" + videoState.optLong("frames", -1) +
                 "\n媒体错误码：" + videoState.optInt("error") + "；播放提示：" + videoState.optString("playError", "") +
+                (VideoSitePolicy.enabled(site) ? "\n视频数据：" + videoState.optBoolean("hasSource") + "；媒体网络状态：" + videoState.optInt("network", -1) +
+                        "；视频尺寸：" + videoState.optInt("videoWidth") + "×" + videoState.optInt("videoHeight") +
+                        "\nMediaSource：" + videoState.optBoolean("mse") + "；脚本等待：" + (probeInFlight ? SystemClock.elapsedRealtime() - probeStartedAt : 0) + " ms" +
+                        "；渲染无响应：" + rendererUnresponsive : "") +
                 "\n网络提示：" + (lastIssue.isEmpty() ? "未记录" : lastIssue) + "\n脚本提示：" + (lastScriptIssue.isEmpty() ? "未记录" : lastScriptIssue) +
                 "\n浏览器内核：" + defaultAgent + "\n\n视频进度推进也不等于画面内容、声音和持续稳定性均已通过。";
         new AlertDialog.Builder(this).setTitle("网页诊断（可拍照反馈）").setMessage(detail)
                 .setPositiveButton("关闭", null).setNeutralButton("电视浏览器", (d, i) -> openBrowser()).show();
     }
     private void pageError(String detail) {
-        pageFailed = true; pageReady = false; lastIssue = detail; main.removeCallbacks(slowPage); main.removeCallbacks(videoPoll);
+        pageFailed = true; pageReady = false; lastIssue = detail; main.removeCallbacks(slowPage); main.removeCallbacks(videoPoll); main.removeCallbacks(sitePoll);
         message(detail + "。菜单键可重试、修改网址或用电视浏览器打开；返回键回到频道列表。");
     }
-    private final Runnable slowPage = () -> message("网页加载较慢。菜单键可刷新、修改网址或使用电视浏览器；返回键回到频道列表。");
+    private final Runnable slowPage = () -> {
+        if (VideoSitePolicy.enabled(site) && videoState.optBoolean("moving")) return;
+        message(VideoSitePolicy.enabled(site) ? "网页加载较慢。菜单 → 播放修复，可重新打开、切换手机网页或用电视浏览器打开。" :
+                "网页加载较慢。菜单键可刷新、修改网址或使用电视浏览器；返回键回到频道列表。");
+    };
     private void message(String text) { if (!destroyed) status.setText(text); }
 
     private void tools() {
-        String[] labels = {site.homeButton, site == Site.CHENGDU ? "定位电视直播区" : "返回页面顶部", "尝试播放网页视频", "网页视频全屏", "重新适配屏幕", "放大网页", "缩小网页",
-                desktopMode ? "切换兼容布局" : "切换桌面布局", "刷新当前网页", "修改本频道网页地址", "网页诊断", "在电视浏览器打开", "网页返回上一页", "返回频道列表"};
-        new AlertDialog.Builder(this).setTitle(site.title + " · 网页工具").setItems(labels, (d, i) -> {
+        String[] normal = {site.homeButton, site == Site.CHENGDU ? "定位电视直播区" : "返回页面顶部", "尝试播放网页视频", "网页视频全屏", "重新适配屏幕", "放大网页", "缩小网页",
+                VideoSitePolicy.enabled(site) ? desktopMode ? "切换手机网页" : "切换桌面网页" : desktopMode ? "切换兼容布局" : "切换桌面布局",
+                "刷新当前网页", "修改本频道网页地址", "网页诊断", "在电视浏览器打开", "网页返回上一页", "返回频道列表"};
+        java.util.List<String> labels = new java.util.ArrayList<>(java.util.Arrays.asList(normal));
+        if (VideoSitePolicy.enabled(site)) labels.add(0, "播放修复（黑屏 / 一直加载）");
+        new AlertDialog.Builder(this).setTitle(site.title + " · 网页工具").setItems(labels.toArray(new String[0]), (d, position) -> {
+            int i = position;
+            if (VideoSitePolicy.enabled(site)) { if (i == 0) { recoverSite(); return; } i--; }
             switch (i) {
                 case 0: navigate(site.homeUrl); break;
                 case 1:
@@ -350,6 +558,7 @@ public final class WebChannelActivity extends Activity {
                 case 5: if (web != null) web.zoomIn(); break;
                 case 6: if (web != null) web.zoomOut(); break;
                 case 7:
+                    if (VideoSitePolicy.enabled(site)) { switchSitePage(); break; }
                     desktopMode = !desktopMode; getPreferences(MODE_PRIVATE).edit().putBoolean(site.desktopPreference(), desktopMode).apply();
                     if (web != null) {
                         String url = WebChannelRoutes.validPageUrl(web.getUrl()) ? web.getUrl() : pageUrl;
@@ -385,7 +594,7 @@ public final class WebChannelActivity extends Activity {
     }
     private void openBrowser() {
         String current = web == null ? null : web.getUrl();
-        String url = WebChannelRoutes.validPageUrl(current) ? current : pageUrl;
+        String url = VideoSitePolicy.enabled(site) ? currentSitePage() : WebChannelRoutes.validPageUrl(current) ? current : pageUrl;
         try {
             // Pause first, so a browser launch cannot leave two audio players running.
             if (web != null) web.onPause();
@@ -432,6 +641,17 @@ public final class WebChannelActivity extends Activity {
         finally { press.recycle(); release.recycle(); }
         content.requestFocus();
     }
+    private void hoverPointer() {
+        if (web == null || fullscreen != null || !VideoSitePolicy.enabled(site)) return;
+        MotionEvent.PointerProperties properties = new MotionEvent.PointerProperties();
+        properties.id = 0; properties.toolType = MotionEvent.TOOL_TYPE_MOUSE;
+        MotionEvent.PointerCoords coordinates = new MotionEvent.PointerCoords(); coordinates.x = pointer.x; coordinates.y = pointer.y;
+        long now = SystemClock.uptimeMillis();
+        MotionEvent hover = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE, 1,
+                new MotionEvent.PointerProperties[]{properties}, new MotionEvent.PointerCoords[]{coordinates},
+                0, 0, 1, 1, 0, 0, InputDevice.SOURCE_MOUSE, 0);
+        try { web.dispatchGenericMotionEvent(hover); } finally { hover.recycle(); }
+    }
     private final class Pointer extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private float x, y;
@@ -445,6 +665,7 @@ public final class WebChannelActivity extends Activity {
             if (key == KeyEvent.KEYCODE_DPAD_DOWN) y += step;
             if (fullscreen == null && web != null && (y < 0 || y > getHeight())) web.scrollBy(0, y < 0 ? -dp(55) : dp(55));
             x = Math.max(2, Math.min(getWidth() - 2, x)); y = Math.max(2, Math.min(getHeight() - 2, y)); invalidate();
+            hoverPointer();
         }
         @Override protected void onDraw(Canvas canvas) {
             paint.setStyle(Paint.Style.FILL); paint.setColor(0xD9E94646); canvas.drawCircle(x, y, dp(7), paint);
@@ -468,6 +689,8 @@ public final class WebChannelActivity extends Activity {
     }
     @Override protected void onPause() {
         foreground = false; main.removeCallbacks(videoPoll);
+        main.removeCallbacks(sitePoll); cancelMediaPermission();
+        if (VideoSitePolicy.enabled(site)) { pageGeneration++; probeInFlight = false; }
         if (web != null) {
             web.evaluateJavascript("if(window.__jianshiTv)window.__jianshiTv.pause();", null);
             web.onPause();
@@ -475,7 +698,8 @@ public final class WebChannelActivity extends Activity {
         super.onPause();
     }
     @Override protected void onStop() {
-        main.removeCallbacks(slowPage); main.removeCallbacks(videoPoll); closePopup(); pageGeneration++; pageReady = false;
+        main.removeCallbacks(slowPage); main.removeCallbacks(videoPoll); main.removeCallbacks(sitePoll); closePopup(); pageGeneration++; pageReady = false;
+        if (recoveryDialog != null) recoveryDialog.dismiss();
         if (web != null) {
             String current = web.getUrl(); resumeUrl = WebChannelRoutes.validPageUrl(current) ? current : pageUrl;
             leaveFullscreen(); web.stopLoading(); web.loadUrl("about:blank");
@@ -487,11 +711,15 @@ public final class WebChannelActivity extends Activity {
         if (web != null) {
             web.onResume();
             if (resumeUrl != null) { String url = resumeUrl; resumeUrl = null; navigate(url); }
-            else if (pageReady) { main.removeCallbacks(videoPoll); main.post(videoPoll); }
+            else if (pageReady) {
+                if (VideoSitePolicy.enabled(site)) { main.removeCallbacks(sitePoll); main.post(sitePoll); }
+                else { main.removeCallbacks(videoPoll); main.post(videoPoll); }
+            }
         }
     }
     @Override protected void onDestroy() {
-        destroyed = true; main.removeCallbacksAndMessages(null); closePopup(); leaveFullscreen();
+        destroyed = true; main.removeCallbacksAndMessages(null); closePopup(); cancelMediaPermission(); leaveFullscreen();
+        if (recoveryDialog != null) recoveryDialog.dismiss();
         if (web != null) {
             web.stopLoading(); web.setWebChromeClient(null); web.setWebViewClient(new WebViewClient());
             if (web.getParent() instanceof ViewGroup) ((ViewGroup) web.getParent()).removeView(web);
