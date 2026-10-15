@@ -27,6 +27,9 @@ def check():
         assert wrapper.testzip() is None
         assert 'org/gradle/wrapper/GradleWrapperMain.class' in wrapper.namelist()
     from release import version
+    from update_catalog import validate
+    _, routes = validate((ROOT / 'app/src/main/assets/best_fan_seed.m3u').read_bytes())
+    print(f'Bundled best-fan catalog valid: {routes} stream URLs (playback not verified).')
     code, name = version()
     print(f'Project structure valid: {len(sources)} sources, version {name} ({code}).')
 

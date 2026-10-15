@@ -82,7 +82,7 @@ public final class MainActivity extends Activity {
                 showStatus(numberOf(channel) + "  " + channel.name + "\n" + stream.sourceName + " · " + channel.streams.size() + " 条线路", true);
             }
         });
-        showStatus("安华电视 1.0\n正在读取频道。右键打开工具。", false);
+        showStatus(getString(R.string.app_name) + " " + BuildConfig.VERSION_NAME + "\n正在读取本地频道目录。右键打开工具。", false);
         loadInitial();
     }
 
@@ -264,7 +264,7 @@ public final class MainActivity extends Activity {
         String[] labels = {"当前频道线路 / 手动换源", "本地网络测速（本频道全部线路）", "逐路出画实测（会临时切换画面）",
                 "订阅管理", "刷新启用的订阅", "导入本地 M3U / TXT", "收藏 / 取消收藏当前频道", "重新连接当前频道",
                 "检查应用更新", "使用说明与状态"};
-        new AlertDialog.Builder(this).setTitle("安华电视 · 工具").setItems(labels, (d, which) -> {
+        new AlertDialog.Builder(this).setTitle(getString(R.string.app_name) + " · 工具").setItems(labels, (d, which) -> {
             switch (which) {
                 case 0: routes(); break;
                 case 1: networkTest(); break;
@@ -426,7 +426,7 @@ public final class MainActivity extends Activity {
         });
     }
     private void about() {
-        show("安华电视 " + BuildConfig.VERSION_NAME + " · 使用说明",
+        show(getString(R.string.app_name) + " " + BuildConfig.VERSION_NAME + " · 使用说明",
                 "上下：切台；按住进入频道列表继续滚动\n确定 / 左键：频道列表；列表中左右切换分组\n长按确定：收藏当前或选中频道\n右键 / 菜单：线路、测速、订阅、更新\n数字键：输入列表编号后自动跳台\n返回：关闭列表；连续两次退出\n\n" +
                 "回看：本版未提供 EPG 或回看播放；已保留订阅中的 catchup 元数据。成都台候选需在本机验证。\n\n" +
                 "更新仓库：" + (BuildConfig.UPDATE_REPOSITORY.isEmpty() ? "未配置" : BuildConfig.UPDATE_REPOSITORY) + "\n\n" + loadSummary);

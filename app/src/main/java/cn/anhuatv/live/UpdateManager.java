@@ -142,7 +142,7 @@ public final class UpdateManager {
         if (Build.VERSION.SDK_INT >= 26 && !activity.getPackageManager().canRequestPackageInstalls()) {
             awaitingPermission = true;
             try { activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + activity.getPackageName()))); }
-            catch (Exception e) { awaitingPermission = false; show("请在电视设置中允许安装", "在安全或应用设置中，允许安华电视安装未知来源应用，然后再次检查更新。"); }
+            catch (Exception e) { awaitingPermission = false; show("请在电视设置中允许安装", "在安全或应用设置中，允许" + activity.getString(R.string.app_name) + "安装未知来源应用，然后再次检查更新。"); }
             return;
         }
         try {
@@ -156,7 +156,7 @@ public final class UpdateManager {
         if (awaitingPermission) {
             awaitingPermission = false;
             if (Build.VERSION.SDK_INT < 26 || activity.getPackageManager().canRequestPackageInstalls()) install();
-            else show("尚未允许安装", "请先在电视设置中允许安华电视安装未知来源应用。");
+            else show("尚未允许安装", "请先在电视设置中允许" + activity.getString(R.string.app_name) + "安装未知来源应用。");
         }
     }
     private void progress(String title, String message) {

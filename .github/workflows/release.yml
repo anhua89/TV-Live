@@ -77,6 +77,8 @@ jobs:
           printf '%s' "$TV_KEYSTORE_BASE64" | base64 --decode > "$signing_path"
           printf 'TV_KEYSTORE_PATH=%s\n' "$signing_path" >> "$GITHUB_ENV"
           keytool -list -keystore "$signing_path" -storepass:env TV_STORE_PASSWORD -alias "$TV_KEY_ALIAS" > /dev/null
+      - name: Refresh bundled channel catalog
+        run: python3 tools/update_catalog.py
       - name: Test, lint and build signed release
         run: |
           chmod +x gradlew
@@ -88,7 +90,7 @@ jobs:
       - name: Downloadable build result
         uses: actions/upload-artifact@v4
         with:
-          name: AnhuaTV-${{ steps.metadata.outputs.version_name }}
+          name: JianshiTV-${{ steps.metadata.outputs.version_name }}
           path: release-output/
           retention-days: 30
       - name: Publish a complete release
@@ -98,8 +100,8 @@ jobs:
           VERSION_NAME: ${{ steps.metadata.outputs.version_name }}
           BUILD_COMMIT: ${{ github.sha }}
         run: |
-          gh release create "$RELEASE_TAG" release-output/*.apk release-output/update.json \
-            --draft --target "$BUILD_COMMIT" --title "安华电视 $VERSION_NAME" --notes-file release-notes.md
+          gh release create "$RELEASE_TAG" release-output/*.apk release-output/update.json release-output/channels.m3u release-output/catalog_metadata.json \
+            --draft --target "$BUILD_COMMIT" --title "简视 TV $VERSION_NAME" --notes-file release-notes.md
           gh release edit "$RELEASE_TAG" --draft=false --latest
       - name: Remove temporary signing material
         if: always()

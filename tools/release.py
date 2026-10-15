@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+from update_catalog import validate
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,7 +31,7 @@ def prepare(apk, output, repository):
     code, name = version()
     tag = f'v{name}'
     output.mkdir(parents=True, exist_ok=True)
-    target = output / f'AnhuaTV-{name}.apk'
+    target = output / f'JianshiTV-{name}.apk'
     if apk.resolve() != target.resolve():
         shutil.copyfile(apk, target)
     checksum = hashlib.sha256(target.read_bytes()).hexdigest()
@@ -45,6 +46,10 @@ def prepare(apk, output, repository):
         'notes': (ROOT / 'release-notes.md').read_text(encoding='utf-8').strip(),
     }
     (output / 'update.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    seed = ROOT / 'app/src/main/assets/best_fan_seed.m3u'
+    validate(seed.read_bytes())
+    shutil.copyfile(seed, output / 'channels.m3u')
+    shutil.copyfile(ROOT / 'app/src/main/assets/catalog_metadata.json', output / 'catalog_metadata.json')
     return tag, name, manifest
 
 

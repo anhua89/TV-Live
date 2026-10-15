@@ -2,6 +2,7 @@ package cn.anhuatv.live;
 
 import android.content.Context;
 import cn.anhuatv.live.core.Catalog;
+import cn.anhuatv.live.core.CatalogResolver;
 import cn.anhuatv.live.core.Models.Channel;
 import cn.anhuatv.live.core.Models.Entry;
 import cn.anhuatv.live.core.Models.Source;
@@ -60,6 +61,9 @@ public final class ChannelRepository {
 
     private Loaded loadOne(Source source, boolean cacheOnly) {
         File cache = new File(context.getFilesDir(), "lists/" + Store.digest(source.id + "|" + source.url) + ".m3u");
+        if (source.url.startsWith("http://") || source.url.startsWith("https://")) {
+            return loadNetworkSource(source, cacheOnly, cache);
+        }
         String text = null; String note = "";
         try {
             if (source.url.startsWith("local://")) {
@@ -91,5 +95,38 @@ public final class ChannelRepository {
         }
         List<Entry> entries = text == null ? new ArrayList<>() : PlaylistParser.parse(text, source);
         return new Loaded(entries, source.name + "：" + entries.size() + " 条线路 " + note);
+    }
+
+    private Loaded loadNetworkSource(Source source, boolean cacheOnly, File cache) {
+        List<CatalogResolver.Attempt> network = new ArrayList<>();
+        network.add(new CatalogResolver.Attempt("原始订阅", () -> Net.text(source.url, Net.noHeaders(), 8 * 1024 * 1024, false)));
+        boolean builtIn = CatalogResolver.isDefaultBestFan(source);
+        if (builtIn && !BuildConfig.UPDATE_REPOSITORY.isEmpty()) {
+            String mirror = "https://github.com/" + BuildConfig.UPDATE_REPOSITORY + "/releases/latest/download/channels.m3u";
+            network.add(new CatalogResolver.Attempt("自己的发布目录", () -> Net.text(mirror, Net.noHeaders(), 8 * 1024 * 1024, true)));
+        }
+        CatalogResolver.Attempt cached = !cache.isFile() ? null : new CatalogResolver.Attempt("本地缓存", () -> {
+            try (InputStream in = new FileInputStream(cache)) { return Net.decode(Net.read(in, 8 * 1024 * 1024)); }
+        });
+        CatalogResolver.Attempt seed = !builtIn ? null : new CatalogResolver.Attempt("内置 best-fan 目录", () -> {
+            try (InputStream in = context.getAssets().open("best_fan_seed.m3u")) { return Net.decode(Net.read(in, 8 * 1024 * 1024)); }
+        });
+        CatalogResolver.Result result = CatalogResolver.resolve(source, cacheOnly, network, cached, seed);
+        String note = result.warning.isEmpty() ? "" : result.warning + "；";
+        if (result.origin == CatalogResolver.Origin.NETWORK && !Thread.currentThread().isInterrupted()) {
+            try { saveCache(cache, result.text); }
+            catch (Exception e) { note += "本次目录可用，但缓存保存失败；"; }
+        }
+        return new Loaded(result.entries, source.name + "：" + result.entries.size() + " 条线路 " + note + "使用" + result.label);
+    }
+
+    private void saveCache(File cache, String text) throws Exception {
+        File dir = cache.getParentFile();
+        if (dir != null && !dir.isDirectory() && !dir.mkdirs()) throw new java.io.IOException("缓存目录不可写");
+        File tmp = new File(cache.getPath() + "." + java.util.UUID.randomUUID() + ".tmp");
+        try {
+            try (FileOutputStream out = new FileOutputStream(tmp)) { out.write(text.getBytes(StandardCharsets.UTF_8)); }
+            if (!tmp.renameTo(cache)) throw new java.io.IOException("缓存保存失败");
+        } finally { if (tmp.exists()) tmp.delete(); }
     }
 }
